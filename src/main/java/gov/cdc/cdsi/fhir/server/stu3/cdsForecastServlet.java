@@ -36,17 +36,19 @@ import org.hl7.fhir.dstu3.model.Immunization;
 import org.hl7.fhir.dstu3.model.Immunization.ImmunizationVaccinationProtocolComponent;
 import org.hl7.fhir.dstu3.model.ImmunizationRecommendation;
 import org.hl7.fhir.dstu3.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationComponent;
+import org.hl7.fhir.dstu3.model.Organization;
 import org.hl7.fhir.dstu3.model.Parameters;
 import org.hl7.fhir.dstu3.model.Parameters.ParametersParameterComponent;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.dstu3.model.TemporalPrecisionEnum;
+import org.hl7.fhir.instance.model.api.IIdType;
 
 /**
  *
  * @author Eric
  */
-@WebServlet(name = "cds-forecast", urlPatterns = {"/cds-forecast"})
+@WebServlet(name = "cds-forecast", urlPatterns = {"/cds-forecast", "/$cds-immunization-forecast"})
 public class cdsForecastServlet extends HttpServlet {
 
   /**
@@ -151,12 +153,20 @@ public class cdsForecastServlet extends HttpServlet {
       {
         DateType dt = (DateType) param.getValue();
         scenario.setAssessmentDate(dt.getValue());
-
       }
       else if (param.getName().equalsIgnoreCase("Immunization"))
       {
         Immunization imm = (Immunization) param.getResource();
-        scenario.addVaccineDoseAdministered(imm.getVaccineCode().getCoding().get(0).getCode(), null, imm.getDate(),i++);
+
+        // Figure out if there is an MVX referenced
+        String mvx = null;
+        Reference refOrg = imm.getManufacturer();
+        Organization org = (Organization) refOrg.getResource();
+        if(org != null)
+          mvx = org.getIdentifier().get(0).getValue();
+        
+        // Add the Vaccine to the Scenario
+        scenario.addVaccineDoseAdministered(imm.getVaccineCode().getCoding().get(0).getCode(), mvx, imm.getDate(),i++);
       }
 
     }

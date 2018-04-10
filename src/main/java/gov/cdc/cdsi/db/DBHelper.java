@@ -5,6 +5,8 @@
 
 package gov.cdc.cdsi.db;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -33,12 +35,15 @@ public class DBHelper {
 
         // MySQL - Openshift instance - Now works on Local Instance too
         Class.forName("com.mysql.jdbc.Driver");
-        String url = "jdbc:mysql://127.8.3.2/cdsi?";
-        return DriverManager.getConnection(url, "adminG8FPQED", "Dtm5dFi918Pv");
+        String url = "jdbc:mysql://localhost/andcom_cdsi-poc?";
+        return DriverManager.getConnection(url, "andcom_adminG8FP", "Dtm5dFi918Pv");
       }
       catch(Exception e) {
         System.out.println(e);
-        throw new Exception("Unable to connect to the database.");
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        throw new Exception(sw.toString() + "Unable to connect to the database.");
       }
 
   }

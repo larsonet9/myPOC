@@ -24,10 +24,23 @@ public class CDSiUtil {
      LocalDate lDate = new LocalDate(laterDate);
      Period p  = new Period(eDate, lDate, PeriodType.yearMonthDay());
      
-     String str = "";
+     String str = "<ul><li>";
      str += p.getYears() == 1 ? p.getYears() + " year " : p.getYears() + " years ";
      str += p.getMonths() == 1 ? p.getMonths() + " month " : p.getMonths() + " months ";
      str += p.getDays() == 1 ? p.getDays() + " day " : p.getDays() + " days ";
+     
+     p = new Period (eDate, lDate, PeriodType.yearWeekDay());
+     str += "</li><li>";
+     str += p.getYears() == 1 ? p.getYears() + " year " : p.getYears() + " years ";
+     str += p.getWeeks() == 1 ? p.getWeeks()+ " week " : p.getWeeks() + " weeks ";
+     str += p.getDays() == 1 ? p.getDays() + " day " : p.getDays() + " days ";
+     
+     p = new Period (eDate, lDate, PeriodType.days());
+     str += "</li><li>";
+     str += p.getDays() == 1 ? p.getDays() + " day " : p.getDays() + " days ";
+     str += "</li></ul>";
+     
+     
 
      return str;
     }

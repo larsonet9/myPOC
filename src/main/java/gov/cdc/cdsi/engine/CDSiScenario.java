@@ -227,12 +227,16 @@ public class CDSiScenario {
           str += "<th>DoseID</th>";
           str += "<th>Date Admin</th>";
           str += "<th>Age at Admin</th>";
+          str += "<th>Interval from Previous</th>";
           str += "<th>Dose Administered</th>";
         str += "</tr>";
 
+    Date prevDate = null;
     for(ScenarioImmunization si : simms)
     {
+      si.setPreviousDateAdmin(prevDate);
       str += si.toString();
+      prevDate = si.getDateAdministered();
     }
     str += "</table>";
 
@@ -297,6 +301,15 @@ public class CDSiScenario {
     private Date   dateAdministered;
     private String expectedEvalStatus;
     private String expectedEvalReason;
+    private Date   previousDateAdmin = null;  // This is only for display purposes.  Not for logic.
+
+    public Date getPreviousDateAdmin() {
+      return previousDateAdmin;
+    }
+
+    public void setPreviousDateAdmin(Date previousDateAdmin) {
+      this.previousDateAdmin = previousDateAdmin;
+    }
 
     public String getExpectedEvalReason() {
       return expectedEvalReason;
@@ -396,6 +409,10 @@ public class CDSiScenario {
       str += "<td>" + doseId + "</td>";
       str += "<td>" + new SimpleDateFormat("MM/dd/yyyy").format(dateAdministered) + "</td>";
       str += "<td>" + CDSiUtil.getAge(dob, dateAdministered) + "</td>";
+      if (doseId == 1) 
+        str += "<td>n/a</td>";
+      else
+        str += "<td>" + CDSiUtil.getAge(previousDateAdmin, dateAdministered) + "</td>";
       if(cvx == null || cvx.isEmpty())
         str += "<td> vaccId(" + vaccineId + ")-MfgId(" + manufacturerId + ")</td>";
       else
