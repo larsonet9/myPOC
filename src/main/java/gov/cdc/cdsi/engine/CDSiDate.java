@@ -29,6 +29,9 @@ public class CDSiDate  {
       return(dropTime(date));
     }
 
+    Calendar calOrig = Calendar.getInstance();
+    calOrig.setTime(baseDate);
+    
     Calendar cal = Calendar.getInstance();
     cal.setTime(baseDate);
 
@@ -44,7 +47,13 @@ public class CDSiDate  {
       amount = amount*7;
     
     cal.add(calField, amount);
-
+    
+    // CALCDT-5: If we fell back, but should have went forward, let's do that now
+    if(mustRollForward(calOrig, cal, calField))
+    {
+     cal.add(Calendar.DAY_OF_MONTH, 1);
+    }
+    
     while(tokens.hasMoreTokens())
     {
       String operation = tokens.nextToken();
@@ -59,6 +68,12 @@ public class CDSiDate  {
         amount = amount*-1;
 
       cal.add(calField, amount);
+      
+      // CALCDT-5: If we fell back, but should have went forward, let's do that now
+      if(mustRollForward(calOrig, cal, calField))
+      {
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+      }
     }
 
     // Drop the time as we don't care about that for Vaccines.
@@ -89,4 +104,11 @@ public class CDSiDate  {
 
     return(cal.getTime());
   }
+
+    private static boolean mustRollForward(Calendar calOrig, Calendar cal, int calField) {
+        return ((calField == Calendar.YEAR || calField == Calendar.MONTH ) &&
+        calOrig.getActualMaximum(Calendar.DAY_OF_MONTH) > cal.getActualMaximum(Calendar.DAY_OF_MONTH) &&
+        cal.get(Calendar.DAY_OF_MONTH) == cal.getActualMaximum(Calendar.DAY_OF_MONTH) &&
+        calOrig.get(Calendar.DAY_OF_MONTH) > cal.get(Calendar.DAY_OF_MONTH));
+    }
 }

@@ -17,6 +17,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
@@ -24,68 +25,68 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * @author Eric
  */
 public class TCLoader {
-  private static final int cdsi_test_id_XLS_COL = 4;
-  private static final int test_case_name_XLS_COL = 5;
-  private static final int dob_XLS_COL = 6;
-  private static final int gender_XLS_COL = 8;
-  private static final int med_history_text_XLS_COL = 9;
-  private static final int med_history_code_XLS_COL = 10;
-  private static final int med_history_code_sys_XLS_COL = 11;
-  private static final int series_status_XLS_COL = 12;
-  private static final int date_admin_1_XLS_COL = 14;
-  private static final int vac_name_1_XLS_COL = 16;
-  private static final int cvx_1_XLS_COL = 17;
-  private static final int mvx_1_XLS_COL = 18;
-  private static final int eval_status_1_XLS_COL = 22;
-  private static final int eval_reason_1_XLS_COL = 24;
-  private static final int date_admin_2_XLS_COL = 27;
-  private static final int vac_name_2_XLS_COL = 31;
-  private static final int cvx_2_XLS_COL = 32;
-  private static final int mvx_2_XLS_COL = 33;
-  private static final int eval_status_2_XLS_COL = 37;
-  private static final int eval_reason_2_XLS_COL = 39;
-  private static final int date_admin_3_XLS_COL = 42;
-  private static final int vac_name_3_XLS_COL = 47;
-  private static final int cvx_3_XLS_COL = 48;
-  private static final int mvx_3_XLS_COL = 49;
-  private static final int eval_status_3_XLS_COL = 53;
-  private static final int eval_reason_3_XLS_COL = 55;
-  private static final int date_admin_4_XLS_COL = 58;
-  private static final int vac_name_4_XLS_COL = 62;
-  private static final int cvx_4_XLS_COL = 63;
-  private static final int mvx_4_XLS_COL = 64;
-  private static final int eval_status_4_XLS_COL = 68;
-  private static final int eval_reason_4_XLS_COL = 70;
-  private static final int date_admin_5_XLS_COL = 73;
-  private static final int vac_name_5_XLS_COL = 77;
-  private static final int cvx_5_XLS_COL = 78;
-  private static final int mvx_5_XLS_COL = 79;
-  private static final int eval_status_5_XLS_COL = 83;
-  private static final int eval_reason_5_XLS_COL = 85;
-  private static final int date_admin_6_XLS_COL = 88;
-  private static final int vac_name_6_XLS_COL = 92;
-  private static final int cvx_6_XLS_COL = 93;
-  private static final int mvx_6_XLS_COL = 94;
-  private static final int eval_status_6_XLS_COL = 98;
-  private static final int eval_reason_6_XLS_COL = 100;
-  private static final int date_admin_7_XLS_COL = 103;
-  private static final int vac_name_7_XLS_COL = 107;
-  private static final int cvx_7_XLS_COL = 108;
-  private static final int mvx_7_XLS_COL = 109;
-  private static final int eval_status_7_XLS_COL = 113;
-  private static final int eval_reason_7_XLS_COL = 115;
-  private static final int forecast_vda_number_XLS_COL = 119;
-  private static final int earliest_date_XLS_COL = 120;
-  private static final int recommended_date_XLS_COL = 125;
-  private static final int past_due_date_XLS_COL = 128;
-  private static final int vaccine_group_XLS_COL = 133;
-  private static final int assessment_date_XLS_COL = 135;
-  private static final int evaluation_test_type_XLS_COL = 138;
-  private static final int date_added_XLS_COL = 140;
-  private static final int date_updated_XLS_COL = 141;
-  private static final int forecast_test_type_XLS_COL = 142;
-  private static final int reason_for_change_XLS_COL = 144;
-  private static final int changed_in_version_XLS_COL = 145;
+  private static final int cdsi_test_id_XLS_COL = 0;
+  private static final int test_case_name_XLS_COL = 1;
+  private static final int dob_XLS_COL = 2;
+  private static final int gender_XLS_COL = 3;
+  private static final int med_history_text_XLS_COL = 4;
+  private static final int med_history_code_XLS_COL = 5;
+  private static final int med_history_code_sys_XLS_COL = 6;
+  private static final int series_status_XLS_COL = 7;
+  private static final int date_admin_1_XLS_COL = 8;
+  private static final int vac_name_1_XLS_COL = 9;
+  private static final int cvx_1_XLS_COL = 10;
+  private static final int mvx_1_XLS_COL = 11;
+  private static final int eval_status_1_XLS_COL = 12;
+  private static final int eval_reason_1_XLS_COL = 13;
+  private static final int date_admin_2_XLS_COL = 14;
+  private static final int vac_name_2_XLS_COL = 15;
+  private static final int cvx_2_XLS_COL = 16;
+  private static final int mvx_2_XLS_COL = 17;
+  private static final int eval_status_2_XLS_COL = 18;
+  private static final int eval_reason_2_XLS_COL = 19;
+  private static final int date_admin_3_XLS_COL = 20;
+  private static final int vac_name_3_XLS_COL = 21;
+  private static final int cvx_3_XLS_COL = 22;
+  private static final int mvx_3_XLS_COL = 23;
+  private static final int eval_status_3_XLS_COL = 24;
+  private static final int eval_reason_3_XLS_COL = 25;
+  private static final int date_admin_4_XLS_COL = 26;
+  private static final int vac_name_4_XLS_COL = 27;
+  private static final int cvx_4_XLS_COL = 28;
+  private static final int mvx_4_XLS_COL = 29;
+  private static final int eval_status_4_XLS_COL = 30;
+  private static final int eval_reason_4_XLS_COL = 31;
+  private static final int date_admin_5_XLS_COL = 32;
+  private static final int vac_name_5_XLS_COL = 33;
+  private static final int cvx_5_XLS_COL = 34;
+  private static final int mvx_5_XLS_COL = 35;
+  private static final int eval_status_5_XLS_COL = 36;
+  private static final int eval_reason_5_XLS_COL = 37;
+  private static final int date_admin_6_XLS_COL = 38;
+  private static final int vac_name_6_XLS_COL = 39;
+  private static final int cvx_6_XLS_COL = 40;
+  private static final int mvx_6_XLS_COL = 41;
+  private static final int eval_status_6_XLS_COL = 42;
+  private static final int eval_reason_6_XLS_COL = 43;
+  private static final int date_admin_7_XLS_COL = 44;
+  private static final int vac_name_7_XLS_COL = 45;
+  private static final int cvx_7_XLS_COL = 46;
+  private static final int mvx_7_XLS_COL = 47;
+  private static final int eval_status_7_XLS_COL = 48;
+  private static final int eval_reason_7_XLS_COL = 49;
+  private static final int forecast_vda_number_XLS_COL = 50;
+  private static final int earliest_date_XLS_COL = 51;
+  private static final int recommended_date_XLS_COL = 52;
+  private static final int past_due_date_XLS_COL = 53;
+  private static final int vaccine_group_XLS_COL = 54;
+  private static final int assessment_date_XLS_COL = 55;
+  private static final int evaluation_test_type_XLS_COL = 56;
+  private static final int date_added_XLS_COL = 57;
+  private static final int date_updated_XLS_COL = 58;
+  private static final int forecast_test_type_XLS_COL = 59;
+  private static final int reason_for_change_XLS_COL = 60;
+  private static final int changed_in_version_XLS_COL = 61;
   
   
 
@@ -102,15 +103,16 @@ public class TCLoader {
     PreparedStatement psTestCase = conn.prepareStatement(SQLInserts.insTestCase);
     
 
-    Workbook wbook = new XSSFWorkbook(is);
-    Sheet sheet = wbook.getSheetAt(0);
+    XSSFWorkbook wbook = new XSSFWorkbook(is);
+    System.out.println("Number of Sheets = " + wbook.getNumberOfSheets());
+    XSSFSheet sheet = wbook.getSheetAt(2);
     for (Row row : sheet) 
     {
-      if(row.getCell(0) != null &&
-         row.getCell(0).getStringCellValue().equalsIgnoreCase("FINAL"))
+      if(row.getCell(cdsi_test_id_XLS_COL) != null &&
+         row.getCell(cdsi_test_id_XLS_COL).getStringCellValue().startsWith("201"))
       {
         insertTestCase(psTestCase, row);
-        System.out.println("Test Case " + row.getCell(4).getStringCellValue() + " loaded.");
+        System.out.println("Test Case " + row.getCell(cdsi_test_id_XLS_COL).getStringCellValue() + " loaded.");
       }
     }
     psTestCase.close();
