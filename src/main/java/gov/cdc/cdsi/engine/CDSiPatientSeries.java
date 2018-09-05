@@ -258,7 +258,7 @@ public class CDSiPatientSeries implements Serializable  {
     // the ffDate to determine the Forecast Finish Date
     for(TargetDose td : targetDoses) {
       if (td.getDoseNumber() > forecastTDnum) {
-        List<SDInterval> intList = SupportingData.getIntervalData(td.getDoseId());
+        List<SDInterval> intList = SupportingData.getIntervalData(td.getDoseId(), assessmentDate);
         // TODO This isn't quite accurate yet.  It only uses the adjacent intervals
         // and ignores the non-adjacent intervals.
         if(intList != null) {

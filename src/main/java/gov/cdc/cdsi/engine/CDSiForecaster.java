@@ -96,7 +96,7 @@ public class CDSiForecaster {
 
     // Column 5 on DT (Patient has Exceeded Max Age)
     // Make sure we have age parameters to evaluate
-    SDAge sdAge = SupportingData.getAgeData(forecastTD.getDoseId());
+    SDAge sdAge = SupportingData.getAgeData(forecastTD.getDoseId(), ps.getAssessmentDate());
     if(sdAge != null)
     {
       // Important dates for this operation
@@ -148,8 +148,8 @@ public class CDSiForecaster {
   // 5.7 Generate Forecast Dates
   private static void generateForecastDates(CDSiPatientSeries ps, AntigenAdministered lastAA, TargetDose forecastTD) throws Exception {
     SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
-    SDAge                       sdAge   = SupportingData.getAgeData(forecastTD.getDoseId());
-    List<SDInterval>            intList = SupportingData.getIntervalData(forecastTD.getDoseId());
+    SDAge                       sdAge   = SupportingData.getAgeData(forecastTD.getDoseId(), ps.getAssessmentDate());
+    List<SDInterval>            intList = SupportingData.getIntervalData(forecastTD.getDoseId(), ps.getAssessmentDate());
     SDSeasonalRecommendation    sdSeas  = SupportingData.getSeasonalRecommendationData(forecastTD.getDoseId());
 
     // if the patient hasn't received any doses, then interval rules don't apply.

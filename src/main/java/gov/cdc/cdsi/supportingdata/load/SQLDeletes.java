@@ -24,12 +24,12 @@ public  static final String delFMRVaccine  = "delete from sd_interval_fmr_vaccin
 private static final String delRuleClause = " where dose_id in (select dose_id from sd_dose where series_id in (select series_id from sd_series where antigen_id = (select antigen_id from antigen where sd_name = 'REPLACE~ANTIGEN')))";
 public  static final String delDoseRules  = "delete from REPLACE~TABLE " + delRuleClause;
 
-public  static final String delDose   = "delete from sd_dose where series_id in (select series_id from sd_series where antigen_id = (select antigen_id from antigen where sd_name = 'REPLACE~ANTIGEN'))";
-public  static final String delSeries = "delete from sd_series where antigen_id = (select antigen_id from antigen where sd_name = 'REPLACE~ANTIGEN')";
+public  static final String delDose     = "delete from sd_dose   where series_id in (select series_id from sd_series where antigen_id = (select antigen_id from antigen where sd_name = 'REPLACE~ANTIGEN'))";
+public  static final String delGender   = "delete from sd_gender where series_id in (select series_id from sd_series where antigen_id = (select antigen_id from antigen where sd_name = 'REPLACE~ANTIGEN'))";
+public  static final String delSeries   = "delete from sd_series where antigen_id = (select antigen_id from antigen where sd_name = 'REPLACE~ANTIGEN')";
 
 public  static final List<String> lstDoseRuleTables = 
     Arrays.asList("sd_conditional_skip",
-                  "sd_gender",
                   "sd_recurring_dose",
                   "sd_interval",
                   "sd_allowable_interval",

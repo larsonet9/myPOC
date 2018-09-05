@@ -20,7 +20,7 @@ public class CDSiEngine {
     // 4.1 Gather Necessary Data
     // This step came from the user input on the screen or a external call.
 
-    // 8.2 Organize Immunization History
+    // 4.2 Organize Immunization History
     CDSiPatientData patientData = PatientData.organizeImmunizationHistory(scenario);
 
     // 4.3 Create Relevant Patient Series

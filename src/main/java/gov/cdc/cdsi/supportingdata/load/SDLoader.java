@@ -12,6 +12,7 @@ import gov.cdc.cdsi.supportingdata.mapping.AntigenSupportingData.Series.SeriesDo
 import gov.cdc.cdsi.supportingdata.mapping.AntigenSupportingData.Series.SeriesDose.Age;
 import gov.cdc.cdsi.supportingdata.mapping.AntigenSupportingData.Series.SeriesDose.AllowableInterval;
 import gov.cdc.cdsi.supportingdata.mapping.AntigenSupportingData.Series.SeriesDose.AllowableVaccine;
+import gov.cdc.cdsi.supportingdata.mapping.AntigenSupportingData.Series.SeriesDose.ConditionalSkip;
 import gov.cdc.cdsi.supportingdata.mapping.AntigenSupportingData.Series.SeriesDose.ConditionalSkip.Set;
 import gov.cdc.cdsi.supportingdata.mapping.AntigenSupportingData.Series.SeriesDose.ConditionalSkip.Set.Condition;
 import gov.cdc.cdsi.supportingdata.mapping.AntigenSupportingData.Series.SeriesDose.InadvertentVaccine;
@@ -63,13 +64,23 @@ public class SDLoader {
         long seriesId = insertSeries(psSeries, acipScheduleId, series, sdVersion);
         System.out.println(series.getSeriesName() + " -> seriesId = " + seriesId);
 
+        // For each Required gender in a series
+        for(String gender : series.getRequiredGender()) {
+          long genID = insertGender(psGender, seriesId, gender);
+          System.out.println("      Gender -> genID = " + genID);
+        }
+
+        
         // For Each Dose in a Series
         for(SeriesDose dose : series.getSeriesDose()) {
           long doseId = insertSeriesDose(psSeriesDose, seriesId, dose);
           System.out.println("   " + dose.getDoseNumber() + " -> DoseId = " + doseId);
 
-          long ageId = insertDoseAge(psDoseAge, doseId, dose.getAge());
-          System.out.println("      " + dose.getAge().getEarliestRecAge() + " -> ageId = " + ageId);
+          // For Each Interval in a Dose
+          for(Age age : dose.getAge()) {
+            long ageId = insertDoseAge(psDoseAge, doseId, age);
+            System.out.println("      " + age.getEarliestRecAge() + " -> ageId = " + ageId);
+          }
 
           // For Each Interval in a Dose
           for(Interval interval : dose.getInterval()) {
@@ -119,15 +130,9 @@ public class SDLoader {
           long seasonID = insertSeasonalRecommendation(psSeasonal, doseId, dose.getSeasonalRecommendation());
           System.out.println("      Seasonal -> seasonID = " + seasonID);
 
-          // For each Gender in a dose
-          for(String gender : series.getRequiredGender()) {
-            long genID = insertGender(psGender, doseId, gender);
-            System.out.println("      Gender -> genID = " + genID);
-          }
-
           // If we have a conditional Skip
-          if(dose.getConditionalSkip().get(0).getSetLogic() != null) {
-            long condSkipId = insertConditionalSkip(psCondSkip, doseId, dose.getConditionalSkip().get(0).getSetLogic());
+          for(ConditionalSkip condSkip : dose.getConditionalSkip()) {
+            long condSkipId = insertConditionalSkip(psCondSkip, doseId, condSkip);
             // For each Conditonal Skip Set
             for(Set csSet : dose.getConditionalSkip().get(0).getSet()) {
               long csSetId  = insertCSSet(psCSSet, condSkipId, csSet);
@@ -269,6 +274,8 @@ public class SDLoader {
     psDoseAge.setString(4, age.getEarliestRecAge());
     psDoseAge.setString(5, age.getLatestRecAge());
     psDoseAge.setString(6, age.getMaxAge());
+    psDoseAge.setDate(7, SDLoaderUtil.isNAorUnbound(age.getEffectiveDate()) ? null : SDLoaderUtil.getDate(age.getEffectiveDate()));
+    psDoseAge.setDate(8, SDLoaderUtil.isNAorUnbound(age.getCessationDate()) ? null : SDLoaderUtil.getDate(age.getCessationDate()));
     return executeInsert(psDoseAge);
   }
 
@@ -283,6 +290,8 @@ public class SDLoader {
     psInterval.setString(6, SDLoaderUtil.cleanNA(interval.getEarliestRecInt()));
     psInterval.setString(7, SDLoaderUtil.cleanNA(interval.getLatestRecInt()));
     psInterval.setString(8, SDLoaderUtil.cleanNA(interval.getIntervalPriority()));
+    psInterval.setDate(9, SDLoaderUtil.isNAorUnbound(interval.getEffectiveDate()) ? null : SDLoaderUtil.getDate(interval.getEffectiveDate()));
+    psInterval.setDate(10, SDLoaderUtil.isNAorUnbound(interval.getCessationDate()) ? null : SDLoaderUtil.getDate(interval.getCessationDate()));
     return executeInsert(psInterval);
   }
 
@@ -301,6 +310,8 @@ public class SDLoader {
     psAllowableInterval.setString(2, SDLoaderUtil.getFirstChar(allowableInterval.getFromPrevious()));
     psAllowableInterval.setString(3, SDLoaderUtil.cleanNA(allowableInterval.getFromTargetDose()));
     psAllowableInterval.setString(4, SDLoaderUtil.cleanNA(allowableInterval.getAbsMinInt()));
+    psAllowableInterval.setDate(5, SDLoaderUtil.isNAorUnbound(allowableInterval.getEffectiveDate()) ? null : SDLoaderUtil.getDate(allowableInterval.getEffectiveDate()));
+    psAllowableInterval.setDate(6, SDLoaderUtil.isNAorUnbound(allowableInterval.getCessationDate()) ? null : SDLoaderUtil.getDate(allowableInterval.getCessationDate()));
     return executeInsert(psAllowableInterval);
   }
 
@@ -350,17 +361,18 @@ public class SDLoader {
     return executeInsert(psSeasonal);
   }
 
-  private long insertGender(PreparedStatement psGender, long doseId, String gender) throws Exception {
+  private long insertGender(PreparedStatement psGender, long seriesId, String gender) throws Exception {
     if(SDLoaderUtil.isEmpty(gender)) return -1;
 
-    psGender.setLong(1, doseId);
+    psGender.setLong(1, seriesId);
     psGender.setString(2, SDLoaderUtil.getFirstChar(gender));
     return executeInsert(psGender);
   }
 
-  private long insertConditionalSkip(PreparedStatement psCondSkip, long doseId, String setLogic ) throws Exception {
+  private long insertConditionalSkip(PreparedStatement psCondSkip, long doseId, ConditionalSkip condSkip) throws Exception {
     psCondSkip.setLong(1, doseId);
-    psCondSkip.setString(2,setLogic);
+    psCondSkip.setString(2, condSkip.getSetLogic());
+    psCondSkip.setString(3, condSkip.getContext());
     return executeInsert(psCondSkip);
   }
 
@@ -368,6 +380,8 @@ public class SDLoader {
     psCSSet.setLong(1, condSkipId);
     psCSSet.setString(2,condSet.getConditionLogic());
     psCSSet.setString(3,condSet.getSetDescription());
+    psCSSet.setDate(4, SDLoaderUtil.isNAorUnbound(condSet.getEffectiveDate()) ? null : SDLoaderUtil.getDate(condSet.getEffectiveDate()));
+    psCSSet.setDate(5, SDLoaderUtil.isNAorUnbound(condSet.getCessationDate()) ? null : SDLoaderUtil.getDate(condSet.getCessationDate()));
     return executeInsert(psCSSet);
   }
 

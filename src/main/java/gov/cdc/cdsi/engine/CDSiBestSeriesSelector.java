@@ -245,11 +245,6 @@ class CDSiBestSeriesSelector {
         score += tmpScore;
         scorePS.addDetailedScore(new Pair("Is Completable", new Integer(tmpScore)));
 
-        // Is Gender Series and Gender Matches
-        tmpScore = isGenderSeriesAndGenderMatches(scorePS, 1, 0);
-        score += tmpScore;
-        scorePS.addDetailedScore(new Pair("Gender Match", new Integer(tmpScore)));
-
         // Is a Product Patient Series
         tmpScore = isProductSeries(scorePS, -1, 1);
         score += tmpScore;
@@ -371,7 +366,7 @@ class CDSiBestSeriesSelector {
 
     // If there is no Maximum Age on the last target dose, then we pass the test as being completable.
     List<TargetDose> tdList = scorePS.getTargetDoses();
-    SDAge sdAge = SupportingData.getAgeData(tdList.get(tdList.size() - 1).getDoseId());
+    SDAge sdAge = SupportingData.getAgeData(tdList.get(tdList.size() - 1).getDoseId(), scorePS.getAssessmentDate());
     if(sdAge == null || sdAge.getMaximumAge() == null || sdAge.getMaximumAge().isEmpty())
       return trueScore;
 
@@ -481,23 +476,6 @@ class CDSiBestSeriesSelector {
       }
     }  // end "j" loop
     return tmpScore;
-  }
-
-  // Definition of "Gender-Specific Patient Series" from  section 6.1
-  // A patient series must be a gender-specific patient series if a gender
-  // status for dose 1 of the supporting data is given.
-  private static int isGenderSeriesAndGenderMatches(CDSiPatientSeries scorePS, int trueScore, int falseScore) throws Exception {
-    SDGender sdGen = SupportingData.getGenderData(scorePS.getTargetDoses().get(0).getDoseId());
-
-    // If there is not a Gender Series, return false score.
-    if(sdGen == null || sdGen.isEmpty())
-      return falseScore;
-
-    // This is a gender Series, so now the patient Gender must match
-    if(sdGen.containsGender(scorePS.getPatientData().getPatient().getGender()))
-      return trueScore;
-
-    return falseScore;
   }
 
   // Definition of "Exceeded Maximum Age" from section 6.1

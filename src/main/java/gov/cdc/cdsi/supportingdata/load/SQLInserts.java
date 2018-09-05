@@ -36,18 +36,21 @@ public class SQLInserts {
   public static final String insDoseAge =
     " insert into sd_age                                                    " +
     "   (dose_id, abs_min_age, min_age, earliest_rec_age,                   " + 
-    "    latest_rec_age, max_age) values(                                   " +
+    "    latest_rec_age, max_age, effective_date, cessation_date) values(   " +
     "   ?,                                                                  " + // dose_id
     "   ?,                                                                  " + // absMinAge
     "   ?,                                                                  " + // minAge
     "   ?,                                                                  " + // earliestRecAge
     "   ?,                                                                  " + // latestRecAge
-    "   ?)                                                                  ";  // maxAge
+    "   ?,                                                                  " + // maxAge
+    "   ?,                                                                  " + // effectiveDate
+    "   ?)                                                                  ";  // cessationDate
 
   public static final String insInterval =
     " insert into sd_interval                                               " +
     "   (dose_id, previous_dose_ind, target_dose_num, abs_min_int, min_int, " +
-    "    earliest_rec_int, latest_rec_int, priority_flag) values(           " +
+    "    earliest_rec_int, latest_rec_int, priority_flag, effective_date,   " +
+    "    cessation_date) values(                                            " +
     "   ?,                                                                  " + // dose_id
     "   ?,                                                                  " + // fromPrevious
     "   ?,                                                                  " + // fromTargetDose
@@ -55,7 +58,9 @@ public class SQLInserts {
     "   ?,                                                                  " + // minInt
     "   ?,                                                                  " + // earliestRecInt
     "   ?,                                                                  " + // latestRecInt
-    "   ?)                                                                  ";  // priorityFlag
+    "   ?,                                                                  " + // priorityFlag
+    "   ?,                                                                  " + // effectiveDate
+    "   ?)                                                                  ";  // cessationDate
   
   public static final String insIntervalFMRVaccine = 
     " insert into sd_interval_fmr_vaccine                                   " +
@@ -65,11 +70,14 @@ public class SQLInserts {
 
   public static final String insAllowableInterval =
     " insert into sd_allowable_interval                                     " +
-    "   (dose_id, previous_dose_ind, target_dose_num, abs_min_int) values(  " +
+    "   (dose_id, previous_dose_ind, target_dose_num, abs_min_int,          " +
+    "    effective_date, cessation_date) values(                            " +
     "   ?,                                                                  " + // dose_id
     "   ?,                                                                  " + // fromPrevious
     "   ?,                                                                  " + // fromTargetDose
-    "   ?)                                                                  ";  // absMinInt
+    "   ?,                                                                  " + // absMinInt
+    "   ?,                                                                  " + // effectiveDate
+    "   ?)                                                                  ";  // cessationDate
 
   public static final String insPrefVaccine =
     " insert into sd_preferable_vaccine                                     " +
@@ -110,21 +118,24 @@ public class SQLInserts {
     "   ?)                                                                  ";  // endDate
 
   public static String insGender =
-    " insert into sd_gender (dose_id, required_gender) values(              " +
-    "   ?,                                                                  " + // dose_id
+    " insert into sd_gender (series_id, required_gender) values(            " +
+    "   ?,                                                                  " + // series_id
     "   ?)                                                                  ";  // requiredGender
   
   public static String insConditionalSkip =
-    " insert into sd_conditional_skip (dose_id, set_logic) values(          " +
+    " insert into sd_conditional_skip (dose_id, set_logic, context) values( " +
     "   ?,                                                                  " + // dose_id
-    "   ?)                                                                  ";  // set_logic
+    "   ?,                                                                  " + // set_Logic
+    "   ?)                                                                  ";  // context
 
   public static String insCSSet =
     " insert into sd_cs_set (conditional_skip_id, condition_logic,          " +
-    "   description) values(                                                " +
+    "   description, effective_date, cessation_date) values(                " +
     "   ?,                                                                  " + // conditional_skip_id
     "   ?,                                                                  " + // condition_logic
-    "   ?)                                                                  ";  // description
+    "   ?,                                                                  " + // description
+    "   ?,                                                                  " + // effective_date
+    "   ?)                                                                  ";  // cessation_date
 
   public static String insCSCondition =
     " insert into sd_cs_condition (cs_set_id, condition_type, start_date,   " +

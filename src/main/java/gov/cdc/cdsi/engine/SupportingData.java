@@ -11,6 +11,7 @@ import gov.cdc.util.CloneSerializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,9 +34,15 @@ public class SupportingData {
     
     Statement stmt  = DBHelper.dbConn().createStatement();
     ResultSet rs = stmt.executeQuery(SQL);
+    
+    String sqlGen = "select CASE when count(*) = 1 then 'Y' " +
+                    "            when not exists (select * from sd_gender where series_id = ?) then 'Y' " +
+                    "            else 'N' " +
+                    "        END from sd_gender where series_id = ? and required_gender = ?";
+    PreparedStatement psGen = DBHelper.dbConn().prepareStatement(sqlGen);
 
     String sqlTD = "select dose_id, dose_number from sd_dose where series_id = ? order by dose_number asc";
-    PreparedStatement pstmt = DBHelper.dbConn().prepareStatement(sqlTD);
+    PreparedStatement psTD = DBHelper.dbConn().prepareStatement(sqlTD);
 
     while(rs.next())
     {
@@ -52,8 +59,8 @@ public class SupportingData {
       ps.setUploadDate(rs.getDate(10));
       ps.setAssessmentDate(assessmentDate);
 
-      pstmt.setInt(1, ps.getSeriesId());
-      ResultSet rsTD = pstmt.executeQuery();
+      psTD.setInt(1, ps.getSeriesId());
+      ResultSet rsTD = psTD.executeQuery();
       while(rsTD.next())
       {
         TargetDose td = ps.new TargetDose();
@@ -61,21 +68,36 @@ public class SupportingData {
         td.setDoseNumber(rsTD.getInt(2));
         ps.addTargetDose(td);
       }
-      ps.setPatientData((CDSiPatientData)CloneSerializable.clone(patientData));
+      
+      // Table 5-3 Make sure the patient's gender is eligible for this
+      psGen.setInt(1, ps.getSeriesId());
+      psGen.setInt(2, ps.getSeriesId());
+      psGen.setString(3, patientData.getPatient().getGender());
+      ResultSet rsGen = psGen.executeQuery();
+      if(rsGen.next())
+      { 
+        if(rsGen.getString(1).equalsIgnoreCase("Y")) 
+        {
+          ps.setPatientData((CDSiPatientData)CloneSerializable.clone(patientData));
+          psList.add(ps);
+        }
+      }
+      rsGen.close();
       rsTD.close();
-      psList.add(ps);
     }
 
-    pstmt.close();
+    psGen.close();
+    psTD.close();
     DBHelper.disconnect(null, stmt, rs);
     return psList;
   }
 
   
-  public static SDAge getAgeData(int doseId) throws Exception {
+  public static SDAge getAgeData(int doseId, Date referenceDate) throws Exception {
     SDAge sdAge = null;
 
-    String SQL = "select abs_min_age, min_age, earliest_rec_age, latest_rec_age, max_age from sd_age where dose_id = " + doseId;
+    String SQL = "select abs_min_age, min_age, earliest_rec_age, latest_rec_age, max_age from sd_age where dose_id = " + doseId + 
+                 " and '" + new SimpleDateFormat("yyyy-MM-dd").format(referenceDate) + "' between coalesce(effective_date, '1900-01-01') and coalesce(cessation_date, '2999-12-31')";
     Statement stmt = DBHelper.dbConn().createStatement();
 
     ResultSet rs = stmt.executeQuery(SQL);
@@ -94,10 +116,11 @@ public class SupportingData {
     return sdAge;
   }
 
-  public static List<SDInterval> getIntervalData(int doseId) throws Exception {
+  public static List<SDInterval> getIntervalData(int doseId, Date referenceDate) throws Exception {
     List<SDInterval> intList = null;
 
-    String SQL = "select interval_id, previous_dose_ind, target_dose_num, abs_min_int, min_int, earliest_rec_int, latest_rec_int, priority_flag from sd_interval where dose_id = " + doseId;
+    String SQL = "select interval_id, previous_dose_ind, target_dose_num, abs_min_int, min_int, earliest_rec_int, latest_rec_int, priority_flag from sd_interval where dose_id = " + doseId + 
+                 " and '" + new SimpleDateFormat("yyyy-MM-dd").format(referenceDate) + "' between coalesce(effective_date, '1900-01-01') and coalesce(cessation_date, '2999-12-31')";
     Statement stmt = DBHelper.dbConn().createStatement();
 
     String sqlCSCVac = "select vaccine_id from sd_interval_fmr_vaccine where interval_id = ?";
@@ -140,10 +163,11 @@ public class SupportingData {
     return intList;
   }
 
-  public static List<SDInterval> getAllowableIntervalData(int doseId) throws Exception {
+  public static List<SDInterval> getAllowableIntervalData(int doseId, Date referenceDate) throws Exception {
     List<SDInterval> intList = null;
 
-    String SQL = "select previous_dose_ind, target_dose_num, abs_min_int from sd_allowable_interval where dose_id = " + doseId;
+    String SQL = "select previous_dose_ind, target_dose_num, abs_min_int from sd_allowable_interval where dose_id = " + doseId + 
+                 " and '" + new SimpleDateFormat("yyyy-MM-dd").format(referenceDate) + "' between coalesce(effective_date, '1900-01-01') and coalesce(cessation_date, '2999-12-31')";
     Statement stmt = DBHelper.dbConn().createStatement();
     ResultSet rs = stmt.executeQuery(SQL);
 
@@ -238,127 +262,6 @@ public class SupportingData {
 
     DBHelper.disconnect(null, stmt, rs);
     return ivList;
-  }
-
-  public static SDSkipTargetDose getSkipTargetDoseData(int doseId) throws Exception {
-    SDSkipTargetDose sdSkip = null;
-
-    String SQL = "select trigger_age, trigger_int, trigger_target_dose, trigger_doses_administered from sd_skip_dose where dose_id = " + doseId;
-    Statement stmt = DBHelper.dbConn().createStatement();
-
-    ResultSet rs = stmt.executeQuery(SQL);
-
-    if(rs.next())
-    {
-      sdSkip = new SDSkipTargetDose();
-      sdSkip.setTriggerAge(rs.getString(1));
-      sdSkip.setTriggerInterval(rs.getString(2));
-      sdSkip.setTriggerTargetDose(rs.getInt(3));
-      sdSkip.setTriggerDosesAdministered(rs.getInt(4));
-    }
-
-    DBHelper.disconnect(null, stmt, rs);
-    return sdSkip;
-  }
-
-  public static List<SDConditionalNeed> getConditionalNeed(int doseId) throws Exception {
-    List<SDConditionalNeed> cnList = null;
-
-    String SQL = "select conditional_set_id from sd_conditional_set where dose_id = " + doseId;
-    Statement stmt = DBHelper.dbConn().createStatement();
-    ResultSet rs = stmt.executeQuery(SQL);
-
-    String sqlCSDetail = "select cs_detail_id, start_date, end_date, dose_count, begin_age, end_age from sd_cs_detail where conditional_set_id = ?";
-    PreparedStatement pstmtCSD = DBHelper.dbConn().prepareStatement(sqlCSDetail);
-
-    String sqlCSDVaccine = "select vaccine_id from sd_csd_vaccine where cs_detail_id = ?";
-    PreparedStatement pstmtCSDV = DBHelper.dbConn().prepareStatement(sqlCSDVaccine);
-
-    if(rs.next())
-    {
-      cnList = new ArrayList();
-      do
-      {
-        SDConditionalNeed cn = new SDConditionalNeed();
-        pstmtCSD.setInt(1, rs.getInt(1));
-        ResultSet rsCSD = pstmtCSD.executeQuery();
-        while(rsCSD.next())
-        {
-          SDConditionalSet cs = new SDConditionalSet();
-          cs.setStartDate(rsCSD.getDate(2));
-          cs.setEndDate(rsCSD.getDate(3));
-          cs.setDoseCount(rsCSD.getInt(4));
-          cs.setBeginAge(rsCSD.getString(5));
-          cs.setEndAge(rsCSD.getString(6));
-
-          // Get all of the internal VaccineIds
-          pstmtCSDV.setInt(1, rsCSD.getInt(1));
-          ResultSet rsCSDV = pstmtCSDV.executeQuery();
-          while(rsCSDV.next())
-          {
-            cs.addVacId(rsCSDV.getString(1));
-          }
-
-          rsCSDV.close();
-          cn.addConditionalSet(cs);
-        }
-
-        rsCSD.close();
-        cnList.add(cn);
-      } while(rs.next());
-      pstmtCSD.close();
-      pstmtCSDV.close();
-    }
-
-    DBHelper.disconnect(null, stmt, rs);
-    return cnList;
-
-  }
-  
-  public static List<SDSubstituteTargetDose> getSubstituteTargetDoseData(int doseId) throws Exception {
-    List<SDSubstituteTargetDose> subList = null;
-
-    String SQL = "select begin_age, end_age, dose_count, doses_to_substitute from sd_substitute_dose where dose_id = " + doseId;
-    Statement stmt = DBHelper.dbConn().createStatement();
-    ResultSet rs = stmt.executeQuery(SQL);
-
-    if(rs.next())
-    {
-      subList = new ArrayList();
-      do
-      {
-        SDSubstituteTargetDose sdSub = new SDSubstituteTargetDose();
-        sdSub.setFirstDoseBeginAge(rs.getString(1));
-        sdSub.setFirstDoseEndAge(rs.getString(2));
-        sdSub.setCountOfValidDoses(rs.getInt(3));
-        sdSub.setDosesToSubstitute(rs.getInt(4));
-        subList.add(sdSub);
-      } while(rs.next());
-    }
-
-    DBHelper.disconnect(null, stmt, rs);
-    return subList;
-  }
-
-  public static SDGender getGenderData(int doseId) throws Exception {
-    SDGender sdGender = null;
-
-    String SQL = "select required_gender from sd_gender where dose_id = " + doseId;
-    Statement stmt = DBHelper.dbConn().createStatement();
-
-    ResultSet rs = stmt.executeQuery(SQL);
-
-    if(rs.next())
-    {
-      sdGender = new SDGender();
-      do
-      {
-        sdGender.addRequiredGender(rs.getString(1));
-      } while(rs.next());
-    }
-
-    DBHelper.disconnect(null, stmt, rs);
-    return sdGender;
   }
 
   public static List<SDLiveVirusConflict> getLiveVirusConflicts(int scheduleId) throws Exception {
@@ -497,16 +400,18 @@ public class SupportingData {
 
   }
 
-  public static SDConditionalSkip getConditionalSkip(int doseId) throws Exception {
+  public static SDConditionalSkip getConditionalSkip(int doseId, Date referenceDate, String context) throws Exception {
     SDConditionalSkip condSkip = null;
     SDCSSet           csSet    = null;
     SDCSCondition     csCond   = null;
 
-    String SQL = "select conditional_skip_id, set_logic from sd_conditional_skip where dose_id = " + doseId;
+    String SQL = "select conditional_skip_id, set_logic from sd_conditional_skip where dose_id = " + doseId + 
+                 " and context in ('Both', '" + context + "')";
     Statement stmt = DBHelper.dbConn().createStatement();
     ResultSet rs = stmt.executeQuery(SQL);
 
-    String sqlCSSet = "select cs_set_id, condition_logic, description from sd_cs_set where conditional_skip_id = ?";
+    String sqlCSSet = "select cs_set_id, condition_logic, description from sd_cs_set where conditional_skip_id = ?" + 
+                      " and ? between coalesce(effective_date, '1900-01-01') and coalesce(cessation_date, '2999-12-31')";
     PreparedStatement pstmtCSSet = DBHelper.dbConn().prepareStatement(sqlCSSet);
 
     String sqlCSCondition = "select cs_condition_id, condition_type, start_date, end_date, begin_age, end_age, min_interval, dose_count, dose_type, dose_count_logic from sd_cs_condition where cs_set_id = ?";
@@ -521,6 +426,7 @@ public class SupportingData {
       condSkip.setSetLogic(rs.getString(2));
       do { // Collect all of the Sets
         pstmtCSSet.setInt(1, rs.getInt(1));
+        pstmtCSSet.setString(2, new SimpleDateFormat("yyyy-MM-dd").format(referenceDate));
         ResultSet rsCSSet = pstmtCSSet.executeQuery();
         while(rsCSSet.next())
         {

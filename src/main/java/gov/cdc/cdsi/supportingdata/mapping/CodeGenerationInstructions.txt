@@ -2,6 +2,9 @@ Generate using the xjc command line utility
 1) Copy AntigenSupportingData.xsd into cd C:\Users\eric\Documents\ngc\CDS\MyCDSEngine\ExcelToXML\CAMProject
 2) open a dos prompt
 3) execute the commands
+-- CD to the proper folder
 cd C:\Users\eric\Documents\ngc\CDS\MyCDSEngine\ExcelToXML\CAMProject
-%JAVA_HOME%/bin/xjc -d src -p gov.cdc.cdsi.supportingdata.mapping antigenSupportingData.xsd
-5) Copy created src code into this project in this package.
+-- Run the command.  Double check this is the right version of java
+"C:/Program Files (x86)/Java/jdk1.8.0_77/bin/xjc" -d src -p gov.cdc.cdsi.supportingdata.mapping antigenSupportingData.xsd
+
+4) Copy created src code into this project in this package.

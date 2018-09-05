@@ -24,7 +24,7 @@ public class CDSiEvaluator {
 
 
   //============= EVALUATE IMMUNIZATION HISTORY ===============================|
-  // This is diagram 8-4 in chapter 8.  The driver of evaluation of a complete |
+  // This is diagram 4-6 in chapter 4.  The driver of evaluation of a complete |
   // administered history against a specific patient series                    |
   //============= EVALUATE IMMUNIZATION HISTORY ===============================|
   public static void evaluateDosesAdministeredAgainstPatientSeries(CDSiPatientSeries ps) throws Exception
@@ -38,11 +38,11 @@ public class CDSiEvaluator {
     if(aaIter == null || !aaIter.hasNext())
       return;
     
-    // This emulates Figure 8-4 from chapter 8.
+    // This emulates Figure 4-6 from chapter 4.
     TargetDose          td = tdIter.next();
     AntigenAdministered aa = aaIter.next();
     do {
-      // performEvaluation is Chapter 4.
+      // performEvaluation is Chapter 6.
       int tdToSub = performEvaluation(aa, td, ps);
       if(td.isStatusSkipped())
       {
@@ -109,52 +109,49 @@ public class CDSiEvaluator {
   }
 
   //============= EVALUATE THIN PROCESS MODEL ================================|
-  // This is chapter 4 of the Logic Spec                                      |
-  // This method mimics the thin process model at the beginning of chapter 4. |
+  // This is chapter 6 of the Logic Spec                                      |
+  // This method mimics the thin process model at the beginning of chapter 6. |
   //============= EVALUATE THIN PROCESS MODEL ================================|
   private static int performEvaluation(AntigenAdministered aa, TargetDose td, CDSiPatientSeries patientSeries) throws Exception {
-    // TODO 4.1 Can the vaccine dose administered be evaluated?
+    // TODO 6.1 Can the vaccine dose administered be evaluated?
  
-    // 4.2 Can the Target Dose be skipped?
+    // 6.2 Can the Target Dose be skipped?
     if (conditionallySkipTargetDose(aa, td, patientSeries, aa.getDateAdministered(), "Evaluation")) {
       td.setStatusSkipped();
       return 0;
     } 
 
-    // 4.NEW Was an inadvertent vaccine administered?
+    // 6.3 Was an inadvertent vaccine administered?
     if (evaluateInadvertentVaccine(aa, td))
     {
       td.setStatusNotSatisified();
       return 0;
     }
     
-    // 4.3 Was the vaccine dose adminsitered at a valid age?
+    // 6.4 Was the vaccine dose adminsitered at a valid age?
     int ageStatus = evaluateAge(aa, td, patientSeries.getPatientData().getPatient().getDob());
 
-    // 4.4 Was the vaccine dose administered at a valid interval?
+    // 6.5 Was the vaccine dose administered at a preferable interval?
     int intStatus = evaluateInterval(aa, td, patientSeries);
 
-    // 4.5 Was the vaccined dose administered at an allowable interval?
+    // 6.6 Was the vaccined dose administered at an allowable interval?
     int allowIntStatus = CDSiGlobals.COMPONENT_STATUS_VALID;
     if (intStatus != CDSiGlobals.COMPONENT_STATUS_VALID)
       allowIntStatus = evaluateAllowableInterval(aa, td, patientSeries);
     
-    // 4.6 Was the live virus vaccine dose administered in conflict with any previous live virus vaccine doses administered?
+    // 6.7 Was the live virus vaccine dose administered in conflict with any previous live virus vaccine doses administered?
     int liveStatus = evaluateLiveVirusConflict(aa, td, patientSeries);
     
-    // 4.7 Did the patient recieve a preferable vaccine?
+    // 6.8 Did the patient recieve a preferable vaccine?
     int prefStatus = evaluatePreferableVaccine(aa, td, patientSeries.getPatientData().getPatient().getDob());
 
-    // 4.8 Did the patient receive an allowable vaccine?
+    // 6.9 Did the patient receive an allowable vaccine?
     int allowStatus = CDSiGlobals.COMPONENT_STATUS_VALID;
     if (prefStatus != CDSiGlobals.COMPONENT_STATUS_VALID)
       allowStatus = evaluateAllowableVaccine(aa, td, patientSeries.getPatientData().getPatient().getDob());
 
-    // 4.9 Is the patient's gender on the required genders?
-    int genderStatus = evaluateGender(aa, td, patientSeries.getPatientData().getPatient().getGender());
-
-    // 4.10 Was the target dose satisfied?
-    td.setStatus(isTargetDoseSatisfied(ageStatus, intStatus, allowIntStatus, liveStatus, prefStatus, allowStatus, genderStatus));
+    // 6.10 Was the target dose satisfied?
+    td.setStatus(isTargetDoseSatisfied(ageStatus, intStatus, allowIntStatus, liveStatus, prefStatus, allowStatus));
     if(td.isStatusSatisfied())
     {
       aa.setValid();
@@ -174,17 +171,17 @@ public class CDSiEvaluator {
   }
 
   //================================ DECISION TABLE METHODS ==================|
-  //  These methods mimic the decision tables found in Chapter 4.             |
+  //  These methods mimic the decision tables found in Chapter 6.             |
   //  They are called from the performEvaluation Method above                 |
   //================================ DECISION TABLE METHODS ==================|
 
-  // TODO 4.1 Can the vaccine dose administered be evaluated?
+  // TODO 6.1 Can the vaccine dose administered be evaluated?
 
-  // 4.2 Can the target dose be skipped?
+  // 6.2 Can the target dose be skipped?
   public static boolean conditionallySkipTargetDose(AntigenAdministered aa, TargetDose td, CDSiPatientSeries ps, Date referenceDate, String context) throws Exception {
     if(td == null) return false;
 
-    SDConditionalSkip condSkip = SupportingData.getConditionalSkip(td.getDoseId());
+    SDConditionalSkip condSkip = SupportingData.getConditionalSkip(td.getDoseId(), referenceDate, context);
    
     if(condSkip == null || condSkip.getCsSets().isEmpty())
       return false;
@@ -355,7 +352,7 @@ public class CDSiEvaluator {
     }
   }
 
-  // 4.NEW Was an inadvertent vaccine administered?
+  // 6.3 Was an inadvertent vaccine administered?
   private static boolean evaluateInadvertentVaccine(AntigenAdministered aa, TargetDose td) throws Exception {
     List<SDInadvertentVaccine> ivList = SupportingData.getInadvertentVaccineData(td.getDoseId());
     
@@ -384,9 +381,9 @@ public class CDSiEvaluator {
     return false;
   }
 
-  // 4.4 Was the vaccine dose adminsitered at a valid age?
+  // 6.4 Was the vaccine dose adminsitered at a valid age?
   private static int evaluateAge(AntigenAdministered aa, TargetDose td, Date dob) throws Exception {
-    SDAge sdAge = SupportingData.getAgeData(td.getDoseId());
+    SDAge sdAge = SupportingData.getAgeData(td.getDoseId(), aa.getDateAdministered());
     DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
     
     // Make sure we have age parameters to evaluate
@@ -439,9 +436,9 @@ public class CDSiEvaluator {
     return CDSiGlobals.COMPONENT_STATUS_VALID;
   }
 
-  // 4.5 Was the vaccine dose administered at a valid interval?
+  // 6.5 Was the vaccine dose administered at a valid interval?
   private static int evaluateInterval(AntigenAdministered aa, TargetDose td, CDSiPatientSeries patientSeries) throws Exception {
-    List<SDInterval> intList = SupportingData.getIntervalData(td.getDoseId());
+    List<SDInterval> intList = SupportingData.getIntervalData(td.getDoseId(), aa.getDateAdministered());
 
     // If no intervals are defined, it's a valid interval
     if(intList == null || intList.isEmpty()) {
@@ -493,9 +490,9 @@ public class CDSiEvaluator {
     return (isValid ? CDSiGlobals.COMPONENT_STATUS_VALID : CDSiGlobals.COMPONENT_STATUS_NOT_VALID);
   }
 
-  // 4.5 Was the vaccine dose administered at an allowable interval?
+  // 6.6 Was the vaccine dose administered at an allowable interval?
   private static int evaluateAllowableInterval(AntigenAdministered aa, TargetDose td, CDSiPatientSeries patientSeries) throws Exception {
-    List<SDInterval> intList = SupportingData.getAllowableIntervalData(td.getDoseId());
+    List<SDInterval> intList = SupportingData.getAllowableIntervalData(td.getDoseId(), aa.getDateAdministered());
 
     // If no intervals are defined, it's not a valid interval
     if(intList == null || intList.isEmpty()) {
@@ -539,7 +536,7 @@ public class CDSiEvaluator {
     return (isValid ? CDSiGlobals.COMPONENT_STATUS_VALID : CDSiGlobals.COMPONENT_STATUS_NOT_VALID);
   }
 
-  // 4.7 Was the live virus vaccine dose administered in conflict with any previous live virus vaccine doses administered?
+  // 6.7 Was the live virus vaccine dose administered in conflict with any previous live virus vaccine doses administered?
   private static int evaluateLiveVirusConflict(AntigenAdministered aa, TargetDose td, CDSiPatientSeries patientSeries) throws Exception {
     List<SDLiveVirusConflict> liveList = SupportingData.getLiveVirusConflicts(1);
 
@@ -567,7 +564,7 @@ public class CDSiEvaluator {
     return CDSiGlobals.COMPONENT_STATUS_VALID;
   }
 
-  // 4.8 Did the patient receive a preferable vaccine?
+  // 6.8 Did the patient receive a preferable vaccine?
   private static int evaluatePreferableVaccine(AntigenAdministered aa, TargetDose td, Date dob) throws Exception {
     List<SDPreferableVaccine> pvList = SupportingData.getPreferableVaccineData(td.getDoseId());
 
@@ -658,7 +655,7 @@ public class CDSiEvaluator {
 
   }
 
-  // 4.9  Did the patient receive an allowable vaccine?
+  // 6.9  Did the patient receive an allowable vaccine?
   private static int evaluateAllowableVaccine(AntigenAdministered aa, TargetDose td, Date dob) throws Exception {
     List<SDAllowableVaccine> avList = SupportingData.getAllowableVaccineData(td.getDoseId());
 
@@ -717,37 +714,13 @@ public class CDSiEvaluator {
 
   }
 
-  // 4.10 Evaluate Gender
-  private static int evaluateGender(AntigenAdministered aa, TargetDose td, String gender) throws Exception {
-    SDGender sdGender = SupportingData.getGenderData(td.getDoseId());
-
-    // Make sure we have age parameters to evaluate
-    if(sdGender == null) {
-      aa.addEvaluationReason("Gender", "Valid", "No Supporting Data defined gender requirements");
-      return CDSiGlobals.COMPONENT_STATUS_VALID;
-    }
-
-    // if Patient Gender is in the Set of Required Genders
-    if(sdGender.containsGender(gender))
-    {
-      aa.addEvaluationReason("Gender", "Valid", "The patient's gender is one of the required genders");
-      return CDSiGlobals.COMPONENT_STATUS_VALID;
-    }
-
-    // No match found
-    aa.addEvaluationReason("Gender", "Not Valid", "The patient's gender is not one of the required genders");
-    return CDSiGlobals.COMPONENT_STATUS_NOT_VALID;
-
-  }
-
-  // 4.11 Is Target Dose Satisfied
+  // 6.10 Is Target Dose Satisfied
   private static String isTargetDoseSatisfied(int ageStatus,
                                               int intervalStatus,
                                               int allowIntStatus,
                                               int liveStatus,
                                               int preferableStatus,
-                                              int allowableStatus,
-                                              int genderStatus) {
+                                              int allowableStatus) {
     
     // join interval statuses together.  If one or the other are valid, then joint interval is valid.
     int jointIntStatus = 
@@ -768,8 +741,7 @@ public class CDSiEvaluator {
        ageStatus         == CDSiGlobals.COMPONENT_STATUS_NOT_VALID  ||
        jointIntStatus    == CDSiGlobals.COMPONENT_STATUS_NOT_VALID  ||
        liveStatus        == CDSiGlobals.COMPONENT_STATUS_NOT_VALID  ||
-       jointVacStatus    == CDSiGlobals.COMPONENT_STATUS_NOT_VALID  ||
-       genderStatus      == CDSiGlobals.COMPONENT_STATUS_NOT_VALID)
+       jointVacStatus    == CDSiGlobals.COMPONENT_STATUS_NOT_VALID)
     {
       return CDSiGlobals.TARGET_DOSE_NOT_SATISFIED;
     }

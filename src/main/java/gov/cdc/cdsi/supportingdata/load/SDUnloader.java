@@ -31,8 +31,9 @@ public class SDUnloader {
       stmt.executeUpdate(buildSQL(SQLDeletes.delDoseRules, antigen, tbl));
     }
 
-    // Delete the Doses and finally the series
+    // Delete the Doses, Gender, and finally the series
     stmt.executeUpdate(buildSQL(SQLDeletes.delDose,   antigen, ""));
+    stmt.executeUpdate(buildSQL(SQLDeletes.delGender, antigen, ""));
     stmt.executeUpdate(buildSQL(SQLDeletes.delSeries, antigen, ""));
 
     // Commit and close
