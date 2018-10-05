@@ -134,7 +134,7 @@ public class SDLoader {
           for(ConditionalSkip condSkip : dose.getConditionalSkip()) {
             long condSkipId = insertConditionalSkip(psCondSkip, doseId, condSkip);
             // For each Conditonal Skip Set
-            for(Set csSet : dose.getConditionalSkip().get(0).getSet()) {
+            for(Set csSet : condSkip.getSet()) {
               long csSetId  = insertCSSet(psCSSet, condSkipId, csSet);
               System.out.println("      CSSet -> csSetID = " + csSetId);
               // For each Conditional Skip Set -> Condition
@@ -274,8 +274,8 @@ public class SDLoader {
     psDoseAge.setString(4, age.getEarliestRecAge());
     psDoseAge.setString(5, age.getLatestRecAge());
     psDoseAge.setString(6, age.getMaxAge());
-    psDoseAge.setDate(7, SDLoaderUtil.isNAorUnbound(age.getEffectiveDate()) ? null : SDLoaderUtil.getDate(age.getEffectiveDate()));
-    psDoseAge.setDate(8, SDLoaderUtil.isNAorUnbound(age.getCessationDate()) ? null : SDLoaderUtil.getDate(age.getCessationDate()));
+    psDoseAge.setDate(7, SDLoaderUtil.isEmpty(age.getEffectiveDate()) ? null : SDLoaderUtil.getDate(age.getEffectiveDate()));
+    psDoseAge.setDate(8, SDLoaderUtil.isEmpty(age.getCessationDate()) ? null : SDLoaderUtil.getDate(age.getCessationDate()));
     return executeInsert(psDoseAge);
   }
 
@@ -290,8 +290,8 @@ public class SDLoader {
     psInterval.setString(6, SDLoaderUtil.cleanNA(interval.getEarliestRecInt()));
     psInterval.setString(7, SDLoaderUtil.cleanNA(interval.getLatestRecInt()));
     psInterval.setString(8, SDLoaderUtil.cleanNA(interval.getIntervalPriority()));
-    psInterval.setDate(9, SDLoaderUtil.isNAorUnbound(interval.getEffectiveDate()) ? null : SDLoaderUtil.getDate(interval.getEffectiveDate()));
-    psInterval.setDate(10, SDLoaderUtil.isNAorUnbound(interval.getCessationDate()) ? null : SDLoaderUtil.getDate(interval.getCessationDate()));
+    psInterval.setDate(9, SDLoaderUtil.isEmpty(interval.getEffectiveDate()) ? null : SDLoaderUtil.getDate(interval.getEffectiveDate()));
+    psInterval.setDate(10, SDLoaderUtil.isEmpty(interval.getCessationDate()) ? null : SDLoaderUtil.getDate(interval.getCessationDate()));
     return executeInsert(psInterval);
   }
 
@@ -310,8 +310,8 @@ public class SDLoader {
     psAllowableInterval.setString(2, SDLoaderUtil.getFirstChar(allowableInterval.getFromPrevious()));
     psAllowableInterval.setString(3, SDLoaderUtil.cleanNA(allowableInterval.getFromTargetDose()));
     psAllowableInterval.setString(4, SDLoaderUtil.cleanNA(allowableInterval.getAbsMinInt()));
-    psAllowableInterval.setDate(5, SDLoaderUtil.isNAorUnbound(allowableInterval.getEffectiveDate()) ? null : SDLoaderUtil.getDate(allowableInterval.getEffectiveDate()));
-    psAllowableInterval.setDate(6, SDLoaderUtil.isNAorUnbound(allowableInterval.getCessationDate()) ? null : SDLoaderUtil.getDate(allowableInterval.getCessationDate()));
+    psAllowableInterval.setDate(5, SDLoaderUtil.isEmpty(allowableInterval.getEffectiveDate()) ? null : SDLoaderUtil.getDate(allowableInterval.getEffectiveDate()));
+    psAllowableInterval.setDate(6, SDLoaderUtil.isEmpty(allowableInterval.getCessationDate()) ? null : SDLoaderUtil.getDate(allowableInterval.getCessationDate()));
     return executeInsert(psAllowableInterval);
   }
 
@@ -372,7 +372,7 @@ public class SDLoader {
   private long insertConditionalSkip(PreparedStatement psCondSkip, long doseId, ConditionalSkip condSkip) throws Exception {
     psCondSkip.setLong(1, doseId);
     psCondSkip.setString(2, condSkip.getSetLogic());
-    psCondSkip.setString(3, condSkip.getContext());
+    psCondSkip.setString(3, SDLoaderUtil.isEmpty(condSkip.getContext()) ? "Both" : condSkip.getContext());
     return executeInsert(psCondSkip);
   }
 
@@ -380,8 +380,8 @@ public class SDLoader {
     psCSSet.setLong(1, condSkipId);
     psCSSet.setString(2,condSet.getConditionLogic());
     psCSSet.setString(3,condSet.getSetDescription());
-    psCSSet.setDate(4, SDLoaderUtil.isNAorUnbound(condSet.getEffectiveDate()) ? null : SDLoaderUtil.getDate(condSet.getEffectiveDate()));
-    psCSSet.setDate(5, SDLoaderUtil.isNAorUnbound(condSet.getCessationDate()) ? null : SDLoaderUtil.getDate(condSet.getCessationDate()));
+    psCSSet.setDate(4, SDLoaderUtil.isEmpty(condSet.getEffectiveDate()) ? null : SDLoaderUtil.getDate(condSet.getEffectiveDate()));
+    psCSSet.setDate(5, SDLoaderUtil.isEmpty(condSet.getCessationDate()) ? null : SDLoaderUtil.getDate(condSet.getCessationDate()));
     return executeInsert(psCSSet);
   }
 

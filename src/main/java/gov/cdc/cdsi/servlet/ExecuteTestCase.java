@@ -79,6 +79,8 @@ public class ExecuteTestCase extends HttpServlet {
     TestCaseResult.purgeResultsTable();
 
     for(String id : testIds) {
+      System.out.println("Test ID = " + id);
+
       // Populate the Scenario
       CDSiScenario scenario = TestCaseData.getTestCase(id);
       // Get Guidance

@@ -116,7 +116,7 @@ public class CDSiEvaluator {
     // TODO 6.1 Can the vaccine dose administered be evaluated?
  
     // 6.2 Can the Target Dose be skipped?
-    if (conditionallySkipTargetDose(aa, td, patientSeries, aa.getDateAdministered(), "Evaluation")) {
+    if (conditionallySkipTargetDose(aa, td, patientSeries, aa.getDateAdministered(), "Evaluation", "Initial")) {
       td.setStatusSkipped();
       return 0;
     } 
@@ -178,7 +178,7 @@ public class CDSiEvaluator {
   // TODO 6.1 Can the vaccine dose administered be evaluated?
 
   // 6.2 Can the target dose be skipped?
-  public static boolean conditionallySkipTargetDose(AntigenAdministered aa, TargetDose td, CDSiPatientSeries ps, Date referenceDate, String context) throws Exception {
+  public static boolean conditionallySkipTargetDose(AntigenAdministered aa, TargetDose td, CDSiPatientSeries ps, Date referenceDate, String context, String processStep) throws Exception {
     if(td == null) return false;
 
     SDConditionalSkip condSkip = SupportingData.getConditionalSkip(td.getDoseId(), referenceDate, context);
@@ -212,21 +212,39 @@ public class CDSiEvaluator {
           // Dates needed
           List<AntigenAdministered> refList = ps.getPatientData().getAntigenAdministeredList();
           List<AntigenAdministered> allAntList = ps.getPatientData().getAllVaccineDosesAdministered();
-            
-          SDInterval sdInt = new SDInterval();
-          sdInt.setFromPreviousDose(false);
-          sdInt.setFromTargetDoseNubmer(td.getDoseNumber() - 1);
-          AntigenAdministered refDose = findReferenceDose(sdInt, aa, refList, allAntList);
-          Date CondSkipIntervalDate = CDSiDate.calculateDate(refDose.getDateAdministered(), csCondition.getInterval(), "");
-          Date refDate              = CDSiDate.dropTime(referenceDate);
-          
-          // Decision Table Column 1
-          if(refDate.compareTo(CondSkipIntervalDate) >= 0) // Ref Date is on or after calculated date
-            csCondition.setConditionMet(true);
-          else if (refDate.compareTo(CondSkipIntervalDate) < 0) // Ref Date is NOT on or after calculated date
+
+          // New Dev work for 4.0
+          if(refList == null || refList.isEmpty())
+          {
             csCondition.setConditionMet(false);
+          }
           else
-            throw new Exception("Condition Skip - Interval DT has a gap.");
+          {
+            AntigenAdministered refDose;
+            if(context.equalsIgnoreCase("Evaluation")) 
+            {
+              SDInterval sdInt = new SDInterval();
+              sdInt.setFromPreviousDose(true);
+              refDose = findReferenceDose(sdInt, aa, refList, allAntList);
+            }
+            else
+            {
+              refDose = refList.get(refList.size()-1);
+            }
+
+            Date CondSkipIntervalDate = CDSiDate.calculateDate(refDose.getDateAdministered(), csCondition.getInterval(), "");
+            Date refDate              = CDSiDate.dropTime(referenceDate);
+            // end new Dev work for 4.0
+
+            // Decision Table Column 1
+            if(refDate.compareTo(CondSkipIntervalDate) >= 0) // Ref Date is on or after calculated date
+              csCondition.setConditionMet(true);
+            else if (refDate.compareTo(CondSkipIntervalDate) < 0) // Ref Date is NOT on or after calculated date
+              csCondition.setConditionMet(false);
+            else
+              throw new Exception("Condition Skip - Interval DT has a gap.");
+
+          }
         }
         else if(csCondition.getConditionType().equalsIgnoreCase("vaccine count by age") ||
                 csCondition.getConditionType().equalsIgnoreCase("vaccine count by date") )
@@ -309,11 +327,12 @@ public class CDSiEvaluator {
           return false;
       }
   
-      // Add all reasons the Reasons
+      // Add all the Reasons
+      td.addSkipReason(context + " Context - " + processStep + " Check");
       td.addSkipReason("-- AND Set Logic --");
       for(SDCSSet csSet : condSkip.getCsSets()) 
       {
-        td.addSkipReason(csSet.getDescription());
+        td.addSkipReason(getRecEffCessRange(csSet.getEffectiveDate(), csSet.getCessationDate()) + csSet.getDescription());
       }
       return true;
     }
@@ -327,6 +346,7 @@ public class CDSiEvaluator {
         {
           if(!headerPrinted)
           {
+            td.addSkipReason(context + " Context - " + processStep + " Check");
             td.addSkipReason("-- OR Set Logic --");
             headerPrinted = true;
           }
@@ -340,6 +360,7 @@ public class CDSiEvaluator {
     {
       if(condSkip.getCsSets().get(0).isSetMet())
       {
+        td.addSkipReason(context + " Context - " + processStep + " Check");
         td.addSkipReason("-- N/A Set Logic --");
         td.addSkipReason(condSkip.getCsSets().get(0).getDescription());
       }
@@ -348,7 +369,7 @@ public class CDSiEvaluator {
     }
     else
     {
-        throw new Exception ("Set Logic AND/OR missing.");
+        throw new Exception ("Set Logic AND/OR missing. (" + context + " Context)");
     }
   }
 
@@ -398,17 +419,17 @@ public class CDSiEvaluator {
     Date absMinAgeDate = CDSiDate.calculateDate(dob, sdAge.getAbsoluteMinimumAge(), "01/01/1900");
     Date minAgeDate    = CDSiDate.calculateDate(dob, sdAge.getMinimumAge(), "01/01/1900");
     Date maxAgeDate    = CDSiDate.calculateDate(dob, sdAge.getMaximumAge(), "12/31/2999");
-
+    
     // VDA < abs Min (Column 1 on DT)
     if (adminDate.before(absMinAgeDate)) {
-      aa.addEvaluationReason("Age", "Too Young", "Administered before " + sdAge.getAbsoluteMinimumAge() + " of age.");
+      aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "Too Young", "Administered before " + sdAge.getAbsoluteMinimumAge() + " of age.");
       return CDSiGlobals.COMPONENT_STATUS_NOT_VALID;
     }
 
     // Abs Min <= VDAdate < min (Columns 2 - 4 on DT)
     // TODO work on the grace period around first dose and previous not valid.
     if (adminDate.before(minAgeDate)) {
-      aa.addEvaluationReason("Age", "Grace Period", "Administered on or after " + sdAge.getAbsoluteMinimumAge() + " but before " + sdAge.getMinimumAge() + " of age.");
+      aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "Grace Period", "Administered on or after " + sdAge.getAbsoluteMinimumAge() + " but before " + sdAge.getMinimumAge() + " of age.");
       return CDSiGlobals.COMPONENT_STATUS_VALID;
     }
 
@@ -422,17 +443,17 @@ public class CDSiEvaluator {
 
       String details = "Administered " + min + (!min.isEmpty() && !max.isEmpty() ? " but " + max : max) + " of age";
 
-      aa.addEvaluationReason("Age", "Valid", details);
+      aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "Valid", details);
       return CDSiGlobals.COMPONENT_STATUS_VALID;
     }
 
     // VDADate >= max (Column 6 on DT)
     if (adminDate.compareTo(maxAgeDate) >= 0) {
-      aa.addEvaluationReason("Age", "too old", "Administered on or after " + sdAge.getMaximumAge() + " of age.");
+      aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "too old", "Administered on or after " + sdAge.getMaximumAge() + " of age.");
       return CDSiGlobals.COMPONENT_STATUS_EXTRANEOUS;
     }
 
-    aa.addEvaluationReason("Age", "", "No Specific Condition found.  Bad Decision Table.");
+    aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "", "No Specific Condition found.  Bad Decision Table.");
     return CDSiGlobals.COMPONENT_STATUS_VALID;
   }
 
@@ -473,18 +494,18 @@ public class CDSiEvaluator {
       // Decision table Column 1 adminDate < absMinInt
       if(adminDate.before(absMinIntDate))
       {
-        aa.addEvaluationReason("Interval", "too soon", "Administered less than " + sdInt.getAbsoluteMinimumInterval() + " from " + strIntType);
+        aa.addEvaluationReason("Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "too soon", "Administered less than " + sdInt.getAbsoluteMinimumInterval() + " from " + strIntType);
         isValid = false;
       }
       // Decision table column 2, 3, 4 (for now) absMinInt <= adminDate < MinInt
       // TODO Work on the grace period around grace period.
       else if(adminDate.before(minIntDate))
       {
-        aa.addEvaluationReason("Interval", "Grace Period", "Administered at least " + sdInt.getAbsoluteMinimumInterval() + " but before " + sdInt.getMinimumInterval() + " from " + strIntType);
+        aa.addEvaluationReason("Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "Grace Period", "Administered at least " + sdInt.getAbsoluteMinimumInterval() + " but before " + sdInt.getMinimumInterval() + " from " + strIntType);
       }
       // Decision table column 5 is the else case at this point
       else
-        aa.addEvaluationReason("Interval", "Valid", "Administered at least " + sdInt.getMinimumInterval() + " from " + strIntType);
+        aa.addEvaluationReason("Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "Valid", "Administered at least " + sdInt.getMinimumInterval() + " from " + strIntType);
     }
 
     return (isValid ? CDSiGlobals.COMPONENT_STATUS_VALID : CDSiGlobals.COMPONENT_STATUS_NOT_VALID);
@@ -523,13 +544,13 @@ public class CDSiEvaluator {
       // Decision table Column 1 adminDate < absMinInt
       if(adminDate.before(absMinIntDate))
       {
-        aa.addEvaluationReason("Allowable Interval", "too soon", "Administered less than " + sdInt.getAbsoluteMinimumInterval() + " from " + strIntType);
+        aa.addEvaluationReason("Allowable Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "too soon", "Administered less than " + sdInt.getAbsoluteMinimumInterval() + " from " + strIntType);
         isValid = false;
       }
       // Decision table column 2 absMinInt <= adminDate
       else if(!adminDate.before(absMinIntDate))
       {
-        aa.addEvaluationReason("Allowable Interval", "Valid", "Administered at least " + sdInt.getAbsoluteMinimumInterval() + " from " + strIntType);
+        aa.addEvaluationReason("Allowable Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "Valid", "Administered at least " + sdInt.getAbsoluteMinimumInterval() + " from " + strIntType);
       }
     }
 
@@ -901,6 +922,14 @@ public class CDSiEvaluator {
       }
     }
     return count;
+  }
+
+  private static String getRecEffCessRange(Date effectiveDate, Date cessationDate) {
+    if (effectiveDate == null && cessationDate == null)
+      return "";
+    
+    DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+    return (effectiveDate == null ? "01/01/1900" : df.format(effectiveDate)) + " - " + (cessationDate == null ? "12/31/2999" : df.format(cessationDate)) + " | ";
   }
 
 

@@ -33,7 +33,7 @@ public class CDSiForecaster {
     TargetDose forecastTD = getTargetDoseToForecast(ps.getTargetDoses());
 
     //5.1 Conditional Skip via recursion
-    if(CDSiEvaluator.conditionallySkipTargetDose(lastAA, forecastTD, ps, ps.getAssessmentDate(), "Forecast"))
+    if(CDSiEvaluator.conditionallySkipTargetDose(lastAA, forecastTD, ps, ps.getAssessmentDate(), "Forecast", "Initial"))
     {
       forecastTD.setStatusSkipped();
       forecastNextDose(ps);
@@ -51,6 +51,13 @@ public class CDSiForecaster {
       
       // 5.7 Generate Forecast Dates
       generateForecastDates(ps, lastAA, forecastTD);
+      
+      
+      if(CDSiEvaluator.conditionallySkipTargetDose(lastAA, forecastTD, ps, ps.getPatientData().getForecast().getEarliestDate(), "Forecast", "Sanity"))
+      {
+        forecastTD.setStatusSkipped();
+        forecastNextDose(ps);
+      }
     }
   }
 

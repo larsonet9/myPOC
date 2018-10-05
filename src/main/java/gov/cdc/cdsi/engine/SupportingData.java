@@ -96,7 +96,7 @@ public class SupportingData {
   public static SDAge getAgeData(int doseId, Date referenceDate) throws Exception {
     SDAge sdAge = null;
 
-    String SQL = "select abs_min_age, min_age, earliest_rec_age, latest_rec_age, max_age from sd_age where dose_id = " + doseId + 
+    String SQL = "select abs_min_age, min_age, earliest_rec_age, latest_rec_age, max_age, effective_date, cessation_date from sd_age where dose_id = " + doseId + 
                  " and '" + new SimpleDateFormat("yyyy-MM-dd").format(referenceDate) + "' between coalesce(effective_date, '1900-01-01') and coalesce(cessation_date, '2999-12-31')";
     Statement stmt = DBHelper.dbConn().createStatement();
 
@@ -110,6 +110,8 @@ public class SupportingData {
       sdAge.setEarliestRecommendedAge(rs.getString(3));
       sdAge.setLatestRecommendedAge(rs.getString(4));
       sdAge.setMaximumAge(rs.getString(5));
+      sdAge.setEffectiveDate(rs.getDate(6));
+      sdAge.setCessationDate(rs.getDate(7));
     }
 
     DBHelper.disconnect(null, stmt, rs);
@@ -119,7 +121,7 @@ public class SupportingData {
   public static List<SDInterval> getIntervalData(int doseId, Date referenceDate) throws Exception {
     List<SDInterval> intList = null;
 
-    String SQL = "select interval_id, previous_dose_ind, target_dose_num, abs_min_int, min_int, earliest_rec_int, latest_rec_int, priority_flag from sd_interval where dose_id = " + doseId + 
+    String SQL = "select interval_id, previous_dose_ind, target_dose_num, abs_min_int, min_int, earliest_rec_int, latest_rec_int, priority_flag, effective_date, cessation_date from sd_interval where dose_id = " + doseId + 
                  " and '" + new SimpleDateFormat("yyyy-MM-dd").format(referenceDate) + "' between coalesce(effective_date, '1900-01-01') and coalesce(cessation_date, '2999-12-31')";
     Statement stmt = DBHelper.dbConn().createStatement();
 
@@ -142,6 +144,8 @@ public class SupportingData {
         sdInt.setEarliestRecommendedInterval(rs.getString(6));
         sdInt.setLatestRecommendedInterval(rs.getString(7));
         sdInt.setPriorityFlag(rs.getString(8));
+        sdInt.setEffectiveDate(rs.getDate(9));
+        sdInt.setCessationDate(rs.getDate(10));
         
         // Check for interval From Most Recent Data
         pstmtIntervalFMR.setInt(1, rs.getInt(1));
@@ -166,7 +170,7 @@ public class SupportingData {
   public static List<SDInterval> getAllowableIntervalData(int doseId, Date referenceDate) throws Exception {
     List<SDInterval> intList = null;
 
-    String SQL = "select previous_dose_ind, target_dose_num, abs_min_int from sd_allowable_interval where dose_id = " + doseId + 
+    String SQL = "select previous_dose_ind, target_dose_num, abs_min_int, effective_date, cessation_date from sd_allowable_interval where dose_id = " + doseId + 
                  " and '" + new SimpleDateFormat("yyyy-MM-dd").format(referenceDate) + "' between coalesce(effective_date, '1900-01-01') and coalesce(cessation_date, '2999-12-31')";
     Statement stmt = DBHelper.dbConn().createStatement();
     ResultSet rs = stmt.executeQuery(SQL);
@@ -180,6 +184,8 @@ public class SupportingData {
         sdInt.setFromPreviousDose((rs.getString(1).equalsIgnoreCase("Y")? true : false));
         sdInt.setFromTargetDoseNubmer(rs.getInt(2));
         sdInt.setAbsoluteMinimumInterval(rs.getString(3));
+        sdInt.setEffectiveDate(rs.getDate(4));
+        sdInt.setCessationDate(rs.getDate(5));
         intList.add(sdInt);
       } while(rs.next());
     }
@@ -410,7 +416,7 @@ public class SupportingData {
     Statement stmt = DBHelper.dbConn().createStatement();
     ResultSet rs = stmt.executeQuery(SQL);
 
-    String sqlCSSet = "select cs_set_id, condition_logic, description from sd_cs_set where conditional_skip_id = ?" + 
+    String sqlCSSet = "select cs_set_id, condition_logic, description, effective_date, cessation_date from sd_cs_set where conditional_skip_id = ?" + 
                       " and ? between coalesce(effective_date, '1900-01-01') and coalesce(cessation_date, '2999-12-31')";
     PreparedStatement pstmtCSSet = DBHelper.dbConn().prepareStatement(sqlCSSet);
 
@@ -433,6 +439,8 @@ public class SupportingData {
           csSet = new SDCSSet();
           csSet.setConditionLogic(rsCSSet.getString(2));
           csSet.setDescription(rsCSSet.getString(3));
+          csSet.setEffectiveDate(rsCSSet.getDate(4));
+          csSet.setCessationDate(rsCSSet.getDate(5));
 
         
           // For each set, collect all of the conditions

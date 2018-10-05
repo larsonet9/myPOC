@@ -7,6 +7,7 @@ package gov.cdc.cdsi.engine;
 
 import gov.cdc.cdsi.db.DBGetter;
 import java.io.Serializable;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -422,7 +423,11 @@ public class CDSiPatientData implements Serializable {
     }
 
     public void addEvaluationReason(String concept, String validity, String details) {
-      this.evaluationReasons.add(new EvaluationReason(concept, validity, details));
+      this.evaluationReasons.add(new EvaluationReason(concept, null, null, validity, details));
+    }
+    
+    public void addEvaluationReason(String concept, Date effectiveDate, Date cessationDate, String validity, String details) {
+      this.evaluationReasons.add(new EvaluationReason(concept, effectiveDate, cessationDate, validity, details));
     }
 
     public String getEvaluationStatus() {
@@ -490,6 +495,12 @@ public class CDSiPatientData implements Serializable {
       if (expectedEvalReason != null)
         str += "<b><i>Expected Reason:</b></i> " + expectedEvalReason + "<br><br><b><i>Actual Reasons:</b></i>";
       str +=   "<table>";
+      str +=     "<tr>";
+      str +=     "  <th>Eval Section</th>";
+      str +=     "  <th>ACIP Eff/Cess Range</th>";
+      str +=     "  <th>Validity</th>";
+      str +=     "  <th>Eval Details</th>";
+      str +=     "</tr>";
       for(EvaluationReason er : evaluationReasons)
         str += er.toString();
       str +=   "</table>";
@@ -502,13 +513,24 @@ public class CDSiPatientData implements Serializable {
 
   protected class EvaluationReason implements Serializable {
     private String concept;
+    private String recEffCessDateRange;
     private String validity;
     private String details;
     
-    public EvaluationReason(String concept, String validity, String details) {
+    public EvaluationReason(String concept, Date effectiveDate, Date cessationDate, String validity, String details) {
       this.concept = concept;
       this.validity = validity;
       this.details = details;
+      
+      if(effectiveDate == null && cessationDate == null) {
+        recEffCessDateRange = "-";
+      }
+      else {
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+        recEffCessDateRange = (effectiveDate == null ? "01/01/1900" : df.format(effectiveDate)) + " - " + (cessationDate == null ? "12/31/2999" : df.format(cessationDate));
+
+      }
+        
     }
 
     public String toString() {
@@ -516,6 +538,7 @@ public class CDSiPatientData implements Serializable {
       
       str  = "<tr>";
       str += "  <td>"+concept+"</td>";
+      str += "  <td>"+recEffCessDateRange+"</td>";
       str += "  <td>"+validity+"</td>";
       str += "  <td>"+details+"</td>";
       str += "</tr>";

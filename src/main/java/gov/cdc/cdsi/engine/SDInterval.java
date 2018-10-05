@@ -5,6 +5,7 @@
 
 package gov.cdc.cdsi.engine;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,14 +14,16 @@ import java.util.Set;
  * @author eric
  */
 public class SDInterval {
-  private boolean fromPreviousDose            = true;
-  private int     fromTargetDoseNubmer        = 0;
-  private Set<String> vacIdList = new HashSet();
-  private String  absoluteMinimumInterval     = "";
-  private String  minimumInterval             = "";
-  private String  earliestRecommendedInterval = "";
-  private String  latestRecommendedInterval   = "";
-  private String  priorityFlag                = "";
+  private boolean     fromPreviousDose            = true;
+  private int         fromTargetDoseNubmer        = 0;
+  private Set<String> vacIdList                   = new HashSet();
+  private String      absoluteMinimumInterval     = "";
+  private String      minimumInterval             = "";
+  private String      earliestRecommendedInterval = "";
+  private String      latestRecommendedInterval   = "";
+  private String      priorityFlag                = "";
+  private Date        effectiveDate               = new Date();
+  private Date        cessationDate               = new Date();
 
   public String getAbsoluteMinimumInterval() {
     return absoluteMinimumInterval;
@@ -94,4 +97,22 @@ public class SDInterval {
   boolean isFromMostRecent() {
     return vacIdList.size() > 0;
   }
+
+  public Date getEffectiveDate() {
+    return effectiveDate;
+  }
+
+  public void setEffectiveDate(Date effectiveDate) {
+    this.effectiveDate = effectiveDate;
+  }
+
+  public Date getCessationDate() {
+    return cessationDate;
+  }
+
+  public void setCessationDate(Date cessationDate) {
+    this.cessationDate = cessationDate;
+  }
+  
+  
 }

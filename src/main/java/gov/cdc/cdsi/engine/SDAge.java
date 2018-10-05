@@ -5,6 +5,8 @@
 
 package gov.cdc.cdsi.engine;
 
+import java.util.Date;
+
 /**
  *
  * @author eric
@@ -15,6 +17,8 @@ public class SDAge {
   private String earliestRecommendedAge = "";
   private String latestRecommendedAge   = "";
   private String maximumAge             = "";
+  private Date effectiveDate            = new Date();
+  private Date cessationDate            = new Date();
 
   public String getAbsoluteMinimumAge() {
     return absoluteMinimumAge;
@@ -56,6 +60,22 @@ public class SDAge {
     this.minimumAge = minimumAge;
   }
 
+  public Date getEffectiveDate() {
+    return effectiveDate;
+  }
 
+  public void setEffectiveDate(Date effectiveDate) {
+    this.effectiveDate = effectiveDate;
+  }
+
+  public Date getCessationDate() {
+    return cessationDate;
+  }
+
+  public void setCessationDate(Date cessationDate) {
+    this.cessationDate = cessationDate;
+  }
+
+  
 
 }

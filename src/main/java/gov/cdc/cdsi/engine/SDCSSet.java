@@ -6,6 +6,7 @@
 package gov.cdc.cdsi.engine;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -16,6 +17,8 @@ class SDCSSet {
   private List<SDCSCondition> csConditions   = new ArrayList();
   private String              conditionLogic = "";
   private String              description    = "";
+  private Date                effectiveDate  = new Date();
+  private Date                cessationDate  = new Date();
   private boolean             setMet         = false;
 
   public List<SDCSCondition> getCsConditions() {
@@ -40,6 +43,22 @@ class SDCSSet {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public Date getEffectiveDate() {
+    return effectiveDate;
+  }
+
+  public void setEffectiveDate(Date effectiveDate) {
+    this.effectiveDate = effectiveDate;
+  }
+
+  public Date getCessationDate() {
+    return cessationDate;
+  }
+
+  public void setCessationDate(Date cessationDate) {
+    this.cessationDate = cessationDate;
   }
   
   public boolean isSetMet() {
