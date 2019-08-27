@@ -571,6 +571,7 @@ public class CDSiPatientData implements Serializable {
     private String antigensNeeded;
     private int    vaccineGroupId;
     private int    targetDoseNumber;
+    private int    forecastNumber;
     private List<String> vaccineTypes = new ArrayList();
     private String intervalPriorityFlag = "";
 
@@ -595,6 +596,14 @@ public class CDSiPatientData implements Serializable {
 
     public void setTargetDoseNumber(int targetDoseNumber) {
       this.targetDoseNumber = targetDoseNumber;
+    }
+
+    public int getForecastNumber() {
+      return forecastNumber;
+    }
+
+    public void setForecastNumber(int forecastNumber) {
+      this.forecastNumber = forecastNumber;
     }
 
     public boolean hasForecast() {

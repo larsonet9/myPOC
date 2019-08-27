@@ -93,7 +93,7 @@ public class PerformCDS extends HttpServlet {
         }
       }
       
-      for(int i = 1; i <= 7; i++)
+      for(int i = 1; i <= 14; i++)
       {
         String dateParam = "date"+i;
         String vdaParam  = "selVDA"+i;

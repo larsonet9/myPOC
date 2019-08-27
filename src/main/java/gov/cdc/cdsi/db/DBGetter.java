@@ -42,7 +42,7 @@ public class DBGetter {
   public static List<NameValuePair> getPatientObservations() throws Exception
   {
     List<NameValuePair> nvList = new ArrayList();
-    String SQL = "SELECT coalesce(concat(phin_vads_code, ':CDCPHINVS'), concat(SNOMED_CT_CODE, ':SCT')), description FROM cdsi.patient_observation where phin_vads_code != 'VXC20' or phin_vads_code is null";
+    String SQL = "SELECT observation_code, concat('(', observation_code, ') ', description) FROM patient_observation";
     Statement stmt = DBHelper.dbConn().createStatement();
 
     ResultSet rs = stmt.executeQuery(SQL);
@@ -51,15 +51,6 @@ public class DBGetter {
     {
       nvList.add(new NameValuePair(rs.getString(1), rs.getString(2)));
     }
-    
-    SQL = "select concat(phin_vads_code, ':CDCPHINVS:', vaccine_group_id), concat(description, ' - ', short_name) from patient_observation, vaccine_group where phin_vads_code = 'VXC20'";
-    rs = stmt.executeQuery(SQL);
-
-    while(rs.next())
-    {
-      nvList.add(new NameValuePair(rs.getString(1), rs.getString(2)));
-    }
-    
 
     DBHelper.disconnect(null, stmt, rs);
     return nvList;

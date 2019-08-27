@@ -14,7 +14,9 @@ public class SQLInserts {
     " insert into sd_series                                                " +
     "  (schedule_id, antigen_id, vaccine_group_id, series_name,            " +
     "   default_series_ind, product_path_ind, series_preference,           " +
-    "   max_age_to_start, min_age_to_start, sd_version, upload_date)       " +
+    "   max_age_to_start, min_age_to_start, sd_version, upload_date,       " +
+    "   administrative_guidance, series_type, equivalent_series_groups,    " +
+    "   series_group_name, series_group, series_priority)                  " +
     "  values (                                                            " +
     "  ?,                                                                  " + // ScheduleID
     "  (select antigen_id from antigen where sd_name = ?),                 " + // targetDisease
@@ -26,7 +28,13 @@ public class SQLInserts {
     "  ?,                                                                  " + // maxAgeToStart
     "  ?,                                                                  " + // minAgeToStart
     "  ?,                                                                  " + // sdVersion
-    "  now())                                                              ";  // Upload Date
+    "  now(),                                                              " + // Upload Date
+    "  ?,                                                                  " + // seriesAdminGuidance
+    "  ?,                                                                  " + // seriesType
+    "  ?,                                                                  " + // equivalentSeriesGroups
+    "  ?,                                                                  " + // seriesGroupName
+    "  ?,                                                                  " + // seriesGroup
+    "  ?)                                                                  ";  // seriesPriority
 
   public static final String insSeriesDose =
     " insert into sd_dose (series_id, dose_number) values(                 " +

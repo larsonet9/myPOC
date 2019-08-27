@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class CDSiForecaster {
 
-  // Chapter 5
+  // Chapter 7
   public static void forecastNextDose(CDSiPatientSeries ps) throws Exception
   {
     // Get last Dose administered as our reference point
@@ -32,7 +32,7 @@ public class CDSiForecaster {
     // Get the target Dose (First target dose with a Not Satisfied status
     TargetDose forecastTD = getTargetDoseToForecast(ps.getTargetDoses());
 
-    //5.1 Conditional Skip via recursion
+    //7.1 Conditional Skip via recursion
     if(CDSiEvaluator.conditionallySkipTargetDose(lastAA, forecastTD, ps, ps.getAssessmentDate(), "Forecast", "Initial"))
     {
       forecastTD.setStatusSkipped();
@@ -40,10 +40,12 @@ public class CDSiForecaster {
       return;
     }
       
-    // 5.2 Determine Evidence of Immunity
+    // 7.2 Determine Evidence of Immunity
     //if (DetermineEvidenceOfImmunity())
     
-    // 5.3 Determine Need
+    // 7.3 Determine Contraindications
+    
+    // 7.4 Determine Need
     if (determineNeed(forecastTD, ps))
     {
       // 5.6 Forecast Vaccine Types
@@ -61,10 +63,13 @@ public class CDSiForecaster {
     }
   }
 
-  // 5.4 Determine Evidence of Immunity
-  // TODO: Implement this.
+  // 7.2 Determine Evidence of Immunity
+  // TODO: Implement this (Determine Evidence of Immunity).
 
-  // 5.5 Determine Need
+  // 7.3 Determine Contraindications
+  // TODO: Implement this (Determine Contraindications).
+
+  // 7.4 Determine Need
   private static boolean determineNeed(TargetDose forecastTD, CDSiPatientSeries ps) throws Exception {
 
     // Column 2 on DT (Patient Complete)
@@ -74,7 +79,7 @@ public class CDSiForecaster {
       return false;
     }
     
-    // Column X
+    // Column 3
     if (forecastTD == null && ps.getCountOfSatisfiedTargetDoses() == 0)
     {
       ps.setStatusNotRecommended();
@@ -82,26 +87,29 @@ public class CDSiForecaster {
       return false;
     }
 
-    // Column 3 (patient has a Contraindication)
-    if(ps.getPatientData().hasMedicalHistory()) {
-      List<SDContraindication> contraList = SupportingData.getContraindicationsForAntigen(ps.getAntigenId());
-      if(contraList != null) {
-        for(SDContraindication contra : contraList) {
-          for(MedicalHistory medHx : ps.getPatientData().getMedicalHistory()) {
-            if(contra.getMedHistoryCode().equalsIgnoreCase(medHx.getMedHistoryCode()) &&
-               contra.getMedHistoryCodeSys().equalsIgnoreCase(medHx.getMedHistoryCodeSys()) &&
-               ps.getVaccineGroupId() == (medHx.isVaccineGroupSpecificCondition()? medHx.getVaccineGroupId() : ps.getVaccineGroupId())) {
-              ps.getPatientData().getForecast().setReason(CDSiGlobals.FORECAST_REASON_CONTRAINDICATED);
-              ps.setStatus(CDSiGlobals.SERIES_CONTRAINDICATED);
-              return false;
-            }
-          }
-        }
-      }
-    }
+/******** COMMENTED OUT FOR NOW. NEW DB TABLES NEEDED IN 4.0 WORK **************/
+    // Column 4 (Patient has Evidence of Immunity)
+    
+    // Column 5 (patient has a Contraindication)
+//    if(ps.getPatientData().hasMedicalHistory()) {
+//      List<SDContraindication> contraList = SupportingData.getContraindicationsForAntigen(ps.getAntigenId());
+//      if(contraList != null) {
+//        for(SDContraindication contra : contraList) {
+//          for(MedicalHistory medHx : ps.getPatientData().getMedicalHistory()) {
+//            if(contra.getMedHistoryCode().equalsIgnoreCase(medHx.getMedHistoryCode()) &&
+//               contra.getMedHistoryCodeSys().equalsIgnoreCase(medHx.getMedHistoryCodeSys()) &&
+//               ps.getVaccineGroupId() == (medHx.isVaccineGroupSpecificCondition()? medHx.getVaccineGroupId() : ps.getVaccineGroupId())) {
+//              ps.getPatientData().getForecast().setReason(CDSiGlobals.FORECAST_REASON_CONTRAINDICATED);
+//              ps.setStatus(CDSiGlobals.SERIES_CONTRAINDICATED);
+//              return false;
+//            }
+//          }
+//        }
+//      }
+//    }
+/*******************************************************************************/
 
-
-    // Column 5 on DT (Patient has Exceeded Max Age)
+    // Column 6 on DT (Patient has Exceeded Max Age)
     // Make sure we have age parameters to evaluate
     SDAge sdAge = SupportingData.getAgeData(forecastTD.getDoseId(), ps.getAssessmentDate());
     if(sdAge != null)
@@ -118,7 +126,7 @@ public class CDSiForecaster {
       }
     }
 
-    // TODO Column 6 (Seasonal Recommendation past season end date)
+    // Column 7 (Seasonal Recommendation past season end date)
     SDSeasonalRecommendation sdSeas = SupportingData.getSeasonalRecommendationData(forecastTD.getDoseId());
     if(sdSeas != null)
     {
@@ -136,23 +144,7 @@ public class CDSiForecaster {
     return true;
   }
 
-  // 5.6 Forecast Vaccine Type
-  private static void forecastVaccineType(CDSiPatientSeries ps, TargetDose forecastTD) throws Exception {
-    List<SDPreferableVaccine> SDPref = SupportingData.getPreferableVaccineData(forecastTD.getDoseId());
-    
-    if(SDPref == null || SDPref.isEmpty()) return;
-    
-
-    for(SDPreferableVaccine pv : SDPref) {
-      if(pv.isForecastVaccineType())
-        if(pv.getManufacturerId() >0 )
-          ps.getPatientData().getForecast().addVaccineType(DBGetter.getProductName(pv.getVaccineId(), pv.getManufacturerId()));
-        else
-          ps.getPatientData().getForecast().addVaccineType(DBGetter.getNameAndCVXFromVaccineId(pv.getVaccineId()));
-    }
-  }
-  
-  // 5.7 Generate Forecast Dates
+  // 7.5 Generate Forecast Dates
   private static void generateForecastDates(CDSiPatientSeries ps, AntigenAdministered lastAA, TargetDose forecastTD) throws Exception {
     SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
     SDAge                       sdAge   = SupportingData.getAgeData(forecastTD.getDoseId(), ps.getAssessmentDate());
@@ -164,9 +156,10 @@ public class CDSiForecaster {
     if(lastAA == null)
       intList = null;
 
-    // Set the forecast Target Dose number
+    // Set the forecast Target Dose number and Forecast Number for Test Cases
     ps.getPatientData().getForecast().setTargetDoseNumber(forecastTD.getDoseNumber());
-    
+    ps.getPatientData().getForecast().setForecastNumber(ps.getPatientData().getCountOfValidDoses() + 1);
+ 
     // Set the Interval Priority Flag
     if(intList != null && !intList.isEmpty())
       ps.getPatientData().getForecast().setIntervalPriorityFlag(intList.get(0).getPriorityFlag());
@@ -183,7 +176,7 @@ public class CDSiForecaster {
     String latestReason   = "LATEST REASON: Set by Age value of "    + (sdAge != null ? sdAge.getMaximumAge() :             "");
 
     
-//******************** EARLIEST DATE *******************************************//
+//******************** EARLIEST DATE (FORECASTDT-1)*******************************************//
     // Earliest Date (Interval)
     if(intList != null && !intList.isEmpty())
     {
@@ -241,10 +234,18 @@ public class CDSiForecaster {
       earliestReason = "EARLIEST DATE: Set by Inadvertent Administration on " + df.format(latestInadvertDate);
     }
     
+    // Latest Vaccine Administration Date (Added in 4.1)
+    if(lastAA != null) {
+      if(lastAA.getDateAdministered().after(earliestDate)) {
+        earliestDate = lastAA.getDateAdministered();
+        earliestReason = "EARLIEST DATE: Set by last Dose Administered on " + df.format(lastAA.getDateAdministered());
+      } 
+    }
+    
     // Assign Earliest Date
     ps.getPatientData().getForecast().setEarliestDate(earliestDate);
     
-    //******************** RECOMMENDED DATE *******************************************//
+    //******************** RECOMMENDED DATE (FORECASTDT-2) *******************************************//
 
     // Use the initially assigned age date if valued as the Unadjusted Date
     if(recommendedDate == null && intList != null && !intList.isEmpty())  // Try to use the Inerval
@@ -288,7 +289,7 @@ public class CDSiForecaster {
     // Assign to forecast
     ps.getPatientData().getForecast().setUnadjustedRecommendedDate(recommendedDate);
 
-    // Now we can adjust to make logical sense (for lapse kids)
+    // Now we can adjust to make logical sense (for lapse kids) (FORECASTDT-5)
     if(earliestDate.after(recommendedDate)) {
       recommendedDate = earliestDate;
       recReason = "RECOMMENDED DATE: Set by EARLIEST DATE.";
@@ -298,7 +299,7 @@ public class CDSiForecaster {
     ps.getPatientData().getForecast().setAdjustedRecommendedDate(recommendedDate);
 
 
-    //******************** PAST DUE DATE *******************************************//
+    //******************** PAST DUE DATE (FORECASTDT-3) *******************************************//
 
     // Use the initially assigned age date if valued as the Unadjusted Date; otherwise, try an interval if one exists.
     if(pastDueDate == null && intList != null && !intList.isEmpty())  // Try to use the Interval
@@ -346,7 +347,7 @@ public class CDSiForecaster {
       // Assign to forecast
       ps.getPatientData().getForecast().setUnadjustedPastDueDate(pastDueDate);
 
-      // Now we can adjust to make logical sense (for lapse kids)
+      // Now we can adjust to make logical sense (for lapse kids) (FORECASTDT-6)
       if(earliestDate.after(pastDueDate)) {
         pastDueDate = earliestDate;
         pastDueReason = "PAST DUE DATE: Set by EARLIEST DATE";
@@ -359,7 +360,7 @@ public class CDSiForecaster {
       pastDueReason = "PAST DUE DATE: No past due date";
     }
 
-    //****************** LATEST DATE *****************************************//
+    //****************** LATEST DATE (FORECASTDT-4) *****************************************//
     //Subtract one from calculate maximum age date or leave null.
     if(latestDate != null)
       latestDate = CDSiDate.calculateDate(latestDate, "0 days - 1 day");
@@ -371,6 +372,23 @@ public class CDSiForecaster {
     
     ps.getPatientData().getForecast().setReason(earliestReason + "<br>" + recReason + "<br>" + pastDueReason + "<br>" + latestReason);
   }
+
+  // 7.5b Forecast Vaccine Type (FORECASTRECVAC-1)
+  private static void forecastVaccineType(CDSiPatientSeries ps, TargetDose forecastTD) throws Exception {
+    List<SDPreferableVaccine> SDPref = SupportingData.getPreferableVaccineData(forecastTD.getDoseId());
+    
+    if(SDPref == null || SDPref.isEmpty()) return;
+    
+
+    for(SDPreferableVaccine pv : SDPref) {
+      if(pv.isForecastVaccineType())
+        if(pv.getManufacturerId() >0 )
+          ps.getPatientData().getForecast().addVaccineType(DBGetter.getProductName(pv.getVaccineId(), pv.getManufacturerId()));
+        else
+          ps.getPatientData().getForecast().addVaccineType(DBGetter.getNameAndCVXFromVaccineId(pv.getVaccineId()));
+    }
+  }
+  
   
 
   //--------- HELPER METHODS --------------------|

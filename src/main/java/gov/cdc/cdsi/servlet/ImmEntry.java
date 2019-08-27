@@ -81,7 +81,7 @@ public class ImmEntry extends HttpServlet {
     try {
       List<NameValuePair> mhxList = DBGetter.getPatientObservations();
 
-      out.println("<br><br><table><tr><th>&nbsp;</th><th>Medical History</th><tr>");
+      out.println("<br><br><table><tr><th>Obs #</th><th>Start Date</th><th>End Date</th><th>Patient Observation</th><tr>");
       for(int i = 1; i <= 5; i++)
       {
         writeMedHistory(out, mhxList, i);
@@ -97,6 +97,8 @@ public class ImmEntry extends HttpServlet {
   {
     out.println("<tr>");
       out.println("<td>"+num+"</td>");
+      out.println("<td><input type=\"text\" name=\"obsStartDate"+num+"\"\"></input></td>");
+      out.println("<td><input type=\"text\" name=\"obsEndDate"+num+"\"\"></input></td>");
       out.println("<td><select style=\"width:650px\" name=\"selMHx"+num+"\">");
         out.println("  <option value=\"-\">Select...</option>");
         ServletUtil.comboWriter(out, nvList, "");
@@ -109,7 +111,7 @@ public class ImmEntry extends HttpServlet {
     try {
       List<NameValuePair> vList = DBGetter.getProducts();
       out.println("<br><br><table><tr><th>Dose #</th><th>Date</th><th>Vaccine Administered</th></tr>");
-      for(int i = 1; i <=7; i++)
+      for(int i = 1; i <=14; i++)
       {
         writeImm(out, vList, i);
       }

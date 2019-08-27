@@ -61,7 +61,7 @@ public class TestCaseResult {
     Forecast forecast = result.getVaccineGroupForecast(ps.getVaccineGroupId());
     pstmt.setString(2,forecast.getStatus());
     if(forecast.hasForecast()) {
-      pstmt.setString(17, "" + forecast.getTargetDoseNumber());
+      pstmt.setString(17, "" + forecast.getForecastNumber());
       pstmt.setString(18, "" + (ps.getPatientData().getCountOfValidDoses() + 1));
       pstmt.setDate(19, new java.sql.Date(forecast.getEarliestDate().getTime()));
       pstmt.setDate(20, new java.sql.Date(forecast.getAdjustedRecommendedDate().getTime()));

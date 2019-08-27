@@ -241,7 +241,7 @@ public class cdsForecastServlet extends HttpServlet {
       ImmunizationRecommendationRecommendationComponent fcastFHIR = new ImmunizationRecommendationRecommendationComponent();
       fcastFHIR.setDate(new Date());
       fcastFHIR.setVaccineCode(getCodeableConcept(DBGetter.GetDefaultForecastCVX(fcastCDSi.getVaccineGroupId()), DBGetter.GetVaccineGroupName(fcastCDSi.getVaccineGroupId()), "http://hl7.org/fhir/v3/vs/VaccineType"));
-      fcastFHIR.setDoseNumber(fcastCDSi.getTargetDoseNumber());
+      fcastFHIR.setDoseNumber(fcastCDSi.getForecastNumber());
       fcastFHIR.setForecastStatus(getCodeableConcept(fcastCDSi.getStatus(), fcastCDSi.getStatus(), "http://hl7.org/fhir/vs/immunization-recommendation-status"));
       
       // Earliest Date

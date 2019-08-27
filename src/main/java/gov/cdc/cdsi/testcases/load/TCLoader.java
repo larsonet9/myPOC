@@ -105,7 +105,7 @@ public class TCLoader {
 
     XSSFWorkbook wbook = new XSSFWorkbook(is);
     System.out.println("Number of Sheets = " + wbook.getNumberOfSheets());
-    XSSFSheet sheet = wbook.getSheetAt(2);
+    XSSFSheet sheet = wbook.getSheetAt(wbook.getNumberOfSheets() - 1);
     for (Row row : sheet) 
     {
       if(row.getCell(cdsi_test_id_XLS_COL) != null &&

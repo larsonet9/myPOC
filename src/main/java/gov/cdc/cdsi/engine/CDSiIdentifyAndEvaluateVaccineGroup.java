@@ -78,6 +78,7 @@ class CDSiIdentifyAndEvaluateVaccineGroup {
     
     // IT rules not in Logic Spec
     fcast.setTargetDoseNumber(seriesForecast.getTargetDoseNumber());
+    fcast.setForecastNumber(seriesForecast.getForecastNumber());
     fcast.setVaccineGroupId(ps.getVaccineGroupId());
 
     return fcast;
@@ -117,6 +118,7 @@ class CDSiIdentifyAndEvaluateVaccineGroup {
 
         // IT rules not in Logic Spec
     fcast.setTargetDoseNumber(getTargetDoseNumber(psList));
+    fcast.setForecastNumber(getForecastNumber(psList));
     fcast.setVaccineGroupId(psList.get(0).getVaccineGroupId());
 
     return fcast;
@@ -317,5 +319,20 @@ class CDSiIdentifyAndEvaluateVaccineGroup {
       targetDoseNumber = 0;
     
     return targetDoseNumber;
+  }
+  
+  private static int getForecastNumber(List<CDSiPatientSeries> psList) throws Exception {
+    int forecastNumber = 999;
+    for(CDSiPatientSeries ps : psList)
+    {
+      int validDoses = ps.getPatientData().getCountOfValidDoses();
+      if(validDoses > 0 &&
+         validDoses < forecastNumber)
+        forecastNumber = validDoses + 1;
+    }
+    if(forecastNumber == 999)
+      forecastNumber = 0;
+    
+    return forecastNumber;
   }
 }

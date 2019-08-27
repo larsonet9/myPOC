@@ -49,12 +49,15 @@ public class SDLoader {
     AntigenSupportingData sd               = (AntigenSupportingData)jaxbUnmarshaller.unmarshal(is);
 
     // First Delete all antigen series for this antigen
+    System.out.println("Delete the Series for this Antigen");
     SDUnloader.deleteAllSeriesForAntigen(sd.getSeries().get(0).getTargetDisease());
 
+    System.out.println("Get a DB Connection.");
     Connection conn = DBHelper.dbConn();
     conn.setAutoCommit(false);
 
     // Prepare the statements
+    System.out.println("Prepare the Statements.");
     prepareStatements(conn);
 
     // For Each series
@@ -256,6 +259,12 @@ public class SDLoader {
     psSeries.setString(8,  SDLoaderUtil.cleanNA(series.getSelectSeries().getMaxAgeToStart()));
     psSeries.setString(9,  SDLoaderUtil.cleanNA(series.getSelectSeries().getMinAgeToStart()));
     psSeries.setString(10, sdVersion);
+    psSeries.setString(11, "");
+    psSeries.setString(12, "");
+    psSeries.setString(13, "");
+    psSeries.setString(14, "");
+    psSeries.setString(15, "");
+    psSeries.setString(16, "");
     return executeInsert(psSeries);
   }
 
