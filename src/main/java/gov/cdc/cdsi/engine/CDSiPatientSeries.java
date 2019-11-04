@@ -251,20 +251,38 @@ public class CDSiPatientSeries implements Serializable  {
     if(patientData.getForecast().getEarliestDate() == null)
       return CDSiDate.calculateDate(null, null, "12/31/2999").getTime();
     
-    Date ffDate        = new Date(patientData.getForecast().getEarliestDate().getTime());
-    int  forecastTDnum = patientData.getForecast().getTargetDoseNumber();
-
+    Date                ffDate        = new Date(patientData.getForecast().getEarliestDate().getTime());
+    Date                tmpDate       = new Date(patientData.getForecast().getEarliestDate().getTime());
+    int                 forecastTDnum = patientData.getForecast().getTargetDoseNumber();
+    AntigenAdministered aa            = null;
+    boolean useLastFFDate             = false;
+    
     // Loop through the remaining target doses, adding the minimum interval to
     // the ffDate to determine the Forecast Finish Date
     for(TargetDose td : targetDoses) {
       if (td.getDoseNumber() > forecastTDnum) {
         List<SDInterval> intList = SupportingData.getIntervalData(td.getDoseId(), assessmentDate);
-        // TODO This isn't quite accurate yet.  It only uses the adjacent intervals
-        // and ignores the non-adjacent intervals.
         if(intList != null) {
           for(SDInterval sdInt : intList) {
-            if(sdInt.isFromPreviousDose())
-              ffDate = CDSiDate.calculateDate(ffDate, sdInt.getMinimumInterval());
+            if(sdInt.isFromPreviousDose()) {
+              tmpDate = CDSiDate.calculateDate(ffDate, sdInt.getMinimumInterval());
+              if(tmpDate.after(ffDate)) {
+                ffDate = tmpDate;
+              }
+            }
+            else if(sdInt.isFromTargetDose()) {
+              try {
+                aa = CDSiEvaluator.findTargetDose(sdInt.getFromTargetDoseNubmer(), patientData.getAntigenAdministeredList());
+              }
+              catch (Exception e) { // Can't find Target Dose (because no administration exists)
+                useLastFFDate = true;
+              }
+              tmpDate = CDSiDate.calculateDate((useLastFFDate ? ffDate : aa.getDateAdministered()), sdInt.getMinimumInterval());
+              if(tmpDate.after(ffDate)) {
+                ffDate = tmpDate;
+              }
+              useLastFFDate = false;
+            }
           }
         }
       }

@@ -48,17 +48,29 @@ public class CDSiForecaster {
     // 7.4 Determine Need
     if (determineNeed(forecastTD, ps))
     {
-      // 5.6 Forecast Vaccine Types
+      // 7.5 Forecast Vaccine Types
       forecastVaccineType(ps, forecastTD);
       
-      // 5.7 Generate Forecast Dates
+      // 7.5 Generate Forecast Dates
       generateForecastDates(ps, lastAA, forecastTD);
       
-      
+      // 7.6 Sanity Check - Could be skipped
       if(CDSiEvaluator.conditionallySkipTargetDose(lastAA, forecastTD, ps, ps.getPatientData().getForecast().getEarliestDate(), "Forecast", "Sanity"))
       {
         forecastTD.setStatusSkipped();
         forecastNextDose(ps);
+      }
+      
+      // 7.6 Sanity Check - Will be too old
+      if(ps.getPatientData().getForecast().getLatestDate() != null &&
+         ps.getPatientData().getForecast().getLatestDate().before(ps.getPatientData().getForecast().getEarliestDate()))
+      {
+        ps.getPatientData().getForecast().setReason("Patient is unable to finish the series prior to the maximum age");
+        ps.setStatus(CDSiGlobals.SERIES_AGED_OUT);
+        ps.getPatientData().getForecast().setEarliestDate(null);
+        ps.getPatientData().getForecast().setAdjustedRecommendedDate(null);
+        ps.getPatientData().getForecast().setAdjustedPastDueDate(null);
+        ps.getPatientData().getForecast().setLatestDate(null);
       }
     }
   }
