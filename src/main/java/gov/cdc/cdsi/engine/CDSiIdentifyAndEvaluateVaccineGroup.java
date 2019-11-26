@@ -211,7 +211,8 @@ class CDSiIdentifyAndEvaluateVaccineGroup {
   }
 
   private static Date getLatestEarliestDate(List<CDSiPatientSeries> psList) throws Exception {
-    Date vgEarliestDate = null;
+    Date vgEarliestDate    = null;
+    Date vgLatestAdminDate = null;
     
     boolean hasPriorityInterval = false;
     for(CDSiPatientSeries ps : psList) {
@@ -222,13 +223,15 @@ class CDSiIdentifyAndEvaluateVaccineGroup {
     for(CDSiPatientSeries ps : psList) {
       if(hasPriorityInterval)
       {
-        if(ps.getPatientData().getForecast().isIntervalPriority()) 
-          vgEarliestDate = getEarlierDate(vgEarliestDate, ps.getPatientData().getForecast().getEarliestDate());
+        if(ps.getPatientData().getForecast().isIntervalPriority())  {
+          vgEarliestDate    = getEarlierDate(vgEarliestDate, ps.getPatientData().getForecast().getEarliestDate());
+          vgLatestAdminDate = getLaterDate(vgLatestAdminDate, ps.getPatientData().getLastDoseDate()); 
+        }
       }
       else
         vgEarliestDate = getLaterDate(vgEarliestDate, ps.getPatientData().getForecast().getEarliestDate());
     }
-    return vgEarliestDate;
+    return hasPriorityInterval ? getLaterDate(vgEarliestDate, vgLatestAdminDate) : vgEarliestDate;
   }
 
   private static Date getEarliestAdjustedRecommendedDate(List<CDSiPatientSeries> psList, Date vgFcastEarliestDate) throws Exception {
@@ -285,16 +288,37 @@ class CDSiIdentifyAndEvaluateVaccineGroup {
   }
 
   private static String getAntigensNeeded(List<CDSiPatientSeries> psList) throws Exception {
+    boolean adminFullVG = SupportingData.isAdministerFullVaccineGroup(psList.get(0).getVaccineGroupId());
     String str = "";
-    for (CDSiPatientSeries series : psList) {
-      if(series.isStatusNotComplete())
-        str += SupportingData.getAntigenName(series.getAntigenId()) + " <br> ";
+    if(adminFullVG) {
+      for (CDSiPatientSeries series : psList) {
+        if(series.isStatusNotComplete())
+          str += SupportingData.getAntigenName(series.getAntigenId()) + " <br> ";
+      }
+    }
+    else {
+      for (CDSiPatientSeries series : psList) {
+        if(series.isStatusNotComplete()) {
+          boolean disqualified = false;
+          for(CDSiPatientSeries innerSeries : psList) {
+            if(innerSeries.getPatientData().getForecast().getEarliestDate()!=null && 
+               innerSeries.getPatientData().getForecast().getEarliestDate().before(series.getPatientData().getForecast().getEarliestDate())) {
+              disqualified = true;
+              break;
+            }
+          }
+          if(!disqualified)
+            str += SupportingData.getAntigenName(series.getAntigenId()) + " <br> ";
+        }
+      }
     }
 
     // Chop off last 4 (" <br> ")
     return str.length() > 6 ? str.substring(0, str.length() - 6) : str;
   }
 
+
+      
   private static String getForecastReasons(List<CDSiPatientSeries> psList) throws Exception {
     String str = "";
     for (CDSiPatientSeries series : psList) {

@@ -130,6 +130,12 @@ public class CDSiPatientData implements Serializable {
     return null;
   }
 
+  public Date getLastDoseDate() {
+    if(aaList.size() > 0)
+      return aaList.get(aaList.size() - 1).getDateAdministered();
+    
+    return null;
+  }
 
   public Forecast getForecast() {
     return forecast;
