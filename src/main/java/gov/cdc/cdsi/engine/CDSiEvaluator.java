@@ -57,6 +57,7 @@ public class CDSiEvaluator {
           // Further testing may result in the need to call .next() after .previous to move cursor to proper position.
           // It works for now.
           td = tdIter.previous();
+          td = tdIter.next();
         }
         else
         {
@@ -86,6 +87,7 @@ public class CDSiEvaluator {
             // Further testing may result in the need to call .next() after .previous to move cursor to proper position.
             // It works for now.
             td = tdIter.previous();
+            td = tdIter.next();
           }
           else // No more Target Doses to iterate
             break;
