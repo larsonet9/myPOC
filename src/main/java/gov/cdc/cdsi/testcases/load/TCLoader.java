@@ -109,7 +109,7 @@ public class TCLoader {
     for (Row row : sheet) 
     {
       if(row.getCell(cdsi_test_id_XLS_COL) != null &&
-         row.getCell(cdsi_test_id_XLS_COL).getStringCellValue().startsWith("201"))
+         row.getCell(cdsi_test_id_XLS_COL).getStringCellValue().startsWith("20"))
       {
         insertTestCase(psTestCase, row);
         System.out.println("Test Case " + row.getCell(cdsi_test_id_XLS_COL).getStringCellValue() + " loaded.");
