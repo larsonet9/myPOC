@@ -23,7 +23,7 @@ import java.util.List;
 public class TestCaseResult {
 
   public static void writeCDSiResult(CDSiResult result, String testCaseId, String vaccineGroupId) throws Exception {
-    String SQL = "insert into cdsi_test_case_result values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    String SQL = "insert into cdsi_test_case_result values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     PreparedStatement pstmt = DBHelper.dbConn().prepareStatement(SQL);
 
     // Preset some values as they may not be set later.
@@ -46,6 +46,12 @@ public class TestCaseResult {
     pstmt.setDate(19, null);
     pstmt.setDate(20, null);
     pstmt.setDate(21, null);
+    pstmt.setString(22, null);
+    pstmt.setString(23, null);
+    pstmt.setInt(24, 0);
+    pstmt.setString(25, null);
+    pstmt.setString(26, null);
+    pstmt.setInt(27, 0);
 
     CDSiPatientSeries ps = result.getBestPatientSeries(Integer.parseInt(vaccineGroupId));
     pstmt.setString(1,testCaseId);
@@ -70,6 +76,12 @@ public class TestCaseResult {
     }
     pstmt.setString(22, forecast.getReason());
 
+    // Best Series Results
+    pstmt.setString(23, (ps.isScored())? "Yes" : "No");
+    pstmt.setString(25, (ps.isDefaultSeries())? "Yes" : "No");
+    pstmt.setString(26, (ps.isCandidateSeries())? "Yes" : "No");
+    pstmt.setInt(27, ps.getSeriesPreference());
+    
     pstmt.executeUpdate();
 
     DBHelper.disconnect(null, pstmt, null);
@@ -99,7 +111,8 @@ public class TestCaseResult {
     "         (select distinct exp.eval_status_5 from vaccine v, vaccine_makeup vm where v.vaccine_id = vm.vaccine_id and vm.vaccine_group_id = vg.vaccine_group_id and v.cvx = exp.cvx_5) evalstatus5, " +
     "         (select distinct exp.eval_status_6 from vaccine v, vaccine_makeup vm where v.vaccine_id = vm.vaccine_id and vm.vaccine_group_id = vg.vaccine_group_id and v.cvx = exp.cvx_6) evalstatus6, " +
     "         (select distinct exp.eval_status_7 from vaccine v, vaccine_makeup vm where v.vaccine_id = vm.vaccine_id and vm.vaccine_group_id = vg.vaccine_group_id and v.cvx = exp.cvx_7) evalstatus7, " +
-    "         act.eval_status_1, act.eval_status_2, act.eval_status_3, act.eval_status_4, act.eval_status_5, act.eval_status_6, act.eval_status_7 " +
+    "         act.eval_status_1, act.eval_status_2, act.eval_status_3, act.eval_status_4, act.eval_status_5, act.eval_status_6, act.eval_status_7, " +
+    "         act.was_scored, is_default_series, is_product_series, series_preference" +
     "    from cdsi_test_case exp,  " +
     "         cdsi_test_case_result act, " +
     "         vaccine_group vg " +
@@ -131,6 +144,12 @@ public class TestCaseResult {
           if(rs.getString(i) != null)
             rd.addExpectedEvaluation(rs.getString(i));
         }
+        
+        // Best Series
+        rd.setWasScored(rs.getString(29));
+        rd.setIsDefault(rs.getString(30));
+        rd.setIsProduct(rs.getString(31));
+        rd.setSeriesPreference(rs.getInt(32));
 
         rdList.add(rd);
       } while(rs.next());

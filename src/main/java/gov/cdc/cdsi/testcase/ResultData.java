@@ -22,7 +22,44 @@ public class ResultData {
   private List<String>     expectedEvaluation = new ArrayList();
   private TestCaseForecast expectedForecast;
   private TestCaseForecast actualForecast;
+  private String           wasScored;
+  private String           isDefault;
+  private String           isProduct;
+  private int              seriesPreference;
 
+  public String getWasScored() {
+    return wasScored;
+  }
+
+  public void setWasScored(String wasScored) {
+    this.wasScored = wasScored;
+  }
+
+  public String getIsDefault() {
+    return isDefault;
+  }
+
+  public void setIsDefault(String isDefault) {
+    this.isDefault = isDefault;
+  }
+
+  public String getIsProduct() {
+    return isProduct;
+  }
+
+  public void setIsProduct(String isProduct) {
+    this.isProduct = isProduct;
+  }
+
+  public int getSeriesPreference() {
+    return seriesPreference;
+  }
+
+  public void setSeriesPreference(int seriesPreference) {
+    this.seriesPreference = seriesPreference;
+  }
+
+  
   public List<String> getActualEvaluation() {
     return actualEvaluation;
   }
@@ -78,24 +115,30 @@ public class ResultData {
   public String toString() {
     String str = "<b>(" + testId + ") - " + testCaseName + "</b><br>";
 
-    str += "<table><tr><th></th><th>Series Status</th><th>Forecast#</th><th>Earliest</th><th>Recommended</th><th>Past Due</th><th>Forecast Notes</th><th>Evaluation Matches</th></tr>";
+    str += "<table><tr><th></th><th>Series Status</th><th>Forecast#</th><th>Earliest</th><th>Recommended</th><th>Past Due</th><th>Forecast Notes</th><th>Evaluation Matches</th><th>Best Series Info</th></tr>";
+
+    String bestSeriesStr = "<b>Was Scored:</b>" + wasScored + "<br>" +
+                           "<b>Is Default:</b>" + isDefault + "<br>" +
+                           "<b>Is Product:</b>" + isProduct + "<br>" +
+                           "<b>Series Prefernce:</b>" + seriesPreference;
+    
     if (evaluationAndForecastPassed()) {
-      str += "<tr><td>CDSi Test Case Expected</td>" + expectedForecast.toString() + "<td>"+ evaluationPassed() + "</td></tr>";
-      str += "<tr><td>CDSi Logic Spec Actual</td>"  + actualForecast.toString()   + "<td>"+ evaluationPassed() + "</td></tr>";
+      str += "<tr><td>CDSi Test Case Expected</td>" + expectedForecast.toString() + "<td>"+ evaluationPassed() + "</td><td></td></tr>";
+      str += "<tr><td>CDSi Logic Spec Actual</td>"  + actualForecast.toString()   + "<td>"+ evaluationPassed() + "</td><td>"+bestSeriesStr+"</td></tr>";
     }
     else if (forecastPassed()) {
-      str += "<tr><td>CDSi Test Case Expected</td>" + expectedForecast.toString() + "<td class=\"evalMismatch\">"+ evaluationPassed() + "</td></tr>";
-      str += "<tr><td>CDSi Logic Spec Actual</td>"  + actualForecast.toString()   + "<td class=\"evalMismatch\">"+ evaluationPassed() + "</td></tr>";
+      str += "<tr><td>CDSi Test Case Expected</td>" + expectedForecast.toString() + "<td class=\"evalMismatch\">"+ evaluationPassed() + "</td><td></td></tr>";
+      str += "<tr><td>CDSi Logic Spec Actual</td>"  + actualForecast.toString()   + "<td class=\"evalMismatch\">"+ evaluationPassed() + "</td><td>"+bestSeriesStr+"</td></tr>";
     }
     else if (evaluationPassed()) {
       expectedForecast.setFailed();
       actualForecast.setFailed();
-      str += "<tr><td>CDSi Test Case Expected</td>" + expectedForecast.toString() + "<td>"+ evaluationPassed() + "</td></tr>";
-      str += "<tr><td>CDSi Logic Spec Actual</td>"  + actualForecast.toString()   + "<td>"+ evaluationPassed() + "</td></tr>";
+      str += "<tr><td>CDSi Test Case Expected</td>" + expectedForecast.toString() + "<td>"+ evaluationPassed() + "</td><td></td></tr>";
+      str += "<tr><td>CDSi Logic Spec Actual</td>"  + actualForecast.toString()   + "<td>"+ evaluationPassed() + "</td><td>"+bestSeriesStr+"</td></tr>";
     }
     else {
-      str += "<tr class=\"failed\"><td>CDSi Test Case Expected</td>" + expectedForecast.toString() + "<td>"+ evaluationPassed() + "</td></tr>";
-      str += "<tr class=\"failed\"><td>CDSi Logic Spec Actual</td>"  + actualForecast.toString()   + "<td>"+ evaluationPassed() + "</td></tr>";
+      str += "<tr class=\"failed\"><td>CDSi Test Case Expected</td>" + expectedForecast.toString() + "<td>"+ evaluationPassed() + "</td><td></td></tr>";
+      str += "<tr class=\"failed\"><td>CDSi Logic Spec Actual</td>"  + actualForecast.toString()   + "<td>"+ evaluationPassed() + "</td><td>"+bestSeriesStr+"</td></tr>";
     }
 
     str += "</table>";
