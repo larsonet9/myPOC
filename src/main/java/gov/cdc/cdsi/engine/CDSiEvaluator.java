@@ -9,12 +9,19 @@ import gov.cdc.cdsi.db.DBGetter;
 import static gov.cdc.cdsi.engine.CDSiDate.dropTime;
 import gov.cdc.cdsi.engine.CDSiPatientSeries.TargetDose;
 import gov.cdc.cdsi.engine.CDSiPatientData.AntigenAdministered;
+import gov.cdc.cdsi.engine.CDSiPatientData.EvaluationReason;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import org.joda.time.Months;
 
 /**
  *
@@ -131,7 +138,7 @@ public class CDSiEvaluator {
     }
     
     // 6.4 Was the vaccine dose adminsitered at a valid age?
-    int ageStatus = evaluateAge(aa, td, patientSeries.getPatientData().getPatient().getDob());
+    int ageStatus = evaluateAge(aa, td, patientSeries.getPatientData().getPatient().getDob(), patientSeries.getPatientData().getAntigenAdministeredList());
 
     // 6.5 Was the vaccine dose administered at a preferable interval?
     int intStatus = evaluateInterval(aa, td, patientSeries);
@@ -405,7 +412,7 @@ public class CDSiEvaluator {
   }
 
   // 6.4 Was the vaccine dose adminsitered at a valid age?
-  private static int evaluateAge(AntigenAdministered aa, TargetDose td, Date dob) throws Exception {
+  private static int evaluateAge(AntigenAdministered aa, TargetDose td, Date dob, List<AntigenAdministered> refList) throws Exception {
     SDAge sdAge = SupportingData.getAgeData(td.getDoseId(), aa.getDateAdministered());
     DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
     
@@ -429,10 +436,40 @@ public class CDSiEvaluator {
     }
 
     // Abs Min <= VDAdate < min (Columns 2 - 4 on DT)
-    // TODO work on the grace period around first dose and previous not valid.
     if (adminDate.before(minAgeDate)) {
-      aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "Grace Period", "Administered on or after " + sdAge.getAbsoluteMinimumAge() + " but before " + sdAge.getMinimumAge() + " of age.");
-      return CDSiGlobals.COMPONENT_STATUS_VALID;
+
+      // NOT the first Target Dose (Columns 2 & 3 on DT)
+      if(td.getDoseNumber()!= 1 && refList.size() > 1) {
+        AntigenAdministered refDose = findPreviousDose(aa.getChronologicalPosition(),refList);
+        
+        LocalDate curDate = LocalDate.of(aa.getDateAdministered().getYear() + 1900, aa.getDateAdministered().getMonth() + 1, aa.getDateAdministered().getDate());
+        LocalDate prevDate = LocalDate.of(refDose.getDateAdministered().getYear() + 1900, refDose.getDateAdministered().getMonth() + 1, refDose.getDateAdministered().getDate());
+        Period diff = Period.between(prevDate, curDate);
+        
+        // Previous dose was invalid due to Age or Interval less than 1 year ago (Column 2 on DT)
+        if (refDose.getEvaluationStatus().equals(CDSiGlobals.ANTIGEN_ADMINISTERED_NOT_VALID) && 
+            diff.getYears() < 1) {
+          List<EvaluationReason> evalReasons = refDose.getEvaluationReasonList();
+          for(EvaluationReason er : evalReasons) {
+            if((er.getConcept().equalsIgnoreCase("Age")  && (er.getValidity().equalsIgnoreCase("Too Young") || er.getValidity().equalsIgnoreCase("Too Old"))) || 
+               (er.getConcept().equalsIgnoreCase("Interval") && er.getValidity().equalsIgnoreCase("Too Soon"))) {
+              aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "Too Young", "Administered on or after " + sdAge.getAbsoluteMinimumAge() + " but before " + sdAge.getMinimumAge() + " of age. However, Grace Period is not allowed due to previous dose being invalid.");
+              return CDSiGlobals.COMPONENT_STATUS_NOT_VALID;
+            }
+          }
+        }
+        
+        // Previous dose was either Valid or the invalid dose was more than 1 year ago (Column 3 on DT)
+        else {
+          aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "Grace Period", "Administered on or after " + sdAge.getAbsoluteMinimumAge() + " but before " + sdAge.getMinimumAge() + " of age.");
+          return CDSiGlobals.COMPONENT_STATUS_VALID;
+        }
+      }
+      // first Target Dose (Column 4 on DT)
+      else {
+        aa.addEvaluationReason("Age", sdAge.getEffectiveDate(), sdAge.getCessationDate(), "Grace Period", "Administered on or after " + sdAge.getAbsoluteMinimumAge() + " but before " + sdAge.getMinimumAge() + " of age.");
+        return CDSiGlobals.COMPONENT_STATUS_VALID;
+      }
     }
 
     // min <= VDAdate < max (Column 5 on DT)
@@ -499,11 +536,41 @@ public class CDSiEvaluator {
         aa.addEvaluationReason("Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "too soon", "Administered less than " + sdInt.getAbsoluteMinimumInterval() + " from " + strIntType);
         isValid = false;
       }
-      // Decision table column 2, 3, 4 (for now) absMinInt <= adminDate < MinInt
-      // TODO Work on the grace period around grace period.
+      // Decision table column 2, 3, 4 absMinInt <= adminDate < MinInt
       else if(adminDate.before(minIntDate))
       {
-        aa.addEvaluationReason("Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "Grace Period", "Administered at least " + sdInt.getAbsoluteMinimumInterval() + " but before " + sdInt.getMinimumInterval() + " from " + strIntType);
+
+        // NOT the first Target Dose (Columns 2 & 3 on DT)
+        if(td.getDoseNumber()!= 1 && refList.size() > 1) {
+          AntigenAdministered prevDose = findPreviousDose(aa.getChronologicalPosition(),refList);
+        
+          // Using some deprecated stuff I shouldn't.  Needed to add 1900 (since old method subtracts 1900) and 1 month to the month
+          LocalDate curDate = LocalDate.of(aa.getDateAdministered().getYear() + 1900, aa.getDateAdministered().getMonth() + 1, aa.getDateAdministered().getDate());
+          LocalDate prevDate = LocalDate.of(prevDose.getDateAdministered().getYear() + 1900, prevDose.getDateAdministered().getMonth() + 1, prevDose.getDateAdministered().getDate());
+          Period diff = Period.between(prevDate, curDate);
+
+          // Previous dose was invalid due to Age or Interval less than 1 year ago (Column 2 on DT)
+          if (prevDose.getEvaluationStatus().equals(CDSiGlobals.ANTIGEN_ADMINISTERED_NOT_VALID) && 
+              diff.getYears() < 1) {
+            List<EvaluationReason> evalReasons = prevDose.getEvaluationReasonList();
+            for(EvaluationReason er : evalReasons) {
+            if((er.getConcept().equalsIgnoreCase("Age")  && (er.getValidity().equalsIgnoreCase("Too Young") || er.getValidity().equalsIgnoreCase("Too Old"))) || 
+               (er.getConcept().equalsIgnoreCase("Interval") && er.getValidity().equalsIgnoreCase("Too Soon")) && isValid) {                
+                aa.addEvaluationReason("Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "Too Soon", "Administered on or after " + sdInt.getAbsoluteMinimumInterval()+ " but before " + sdInt.getMinimumInterval()+  " from " + strIntType + ". However, Grace Period is not allowed due to previous dose being invalid.");
+                isValid = false;
+              }
+            }
+          }
+
+          // Previous dose was either Valid or the invalid dose was more than 1 year ago (Column 3 on DT)
+          else {
+            aa.addEvaluationReason("Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "Grace Period", "Administered at least " + sdInt.getAbsoluteMinimumInterval() + " but before " + sdInt.getMinimumInterval() + " from " + strIntType);
+          }
+        }
+        // first Target Dose (Column 4 on DT)
+        else {
+          aa.addEvaluationReason("Interval", sdInt.getEffectiveDate(), sdInt.getCessationDate(), "Grace Period", "Administered at least " + sdInt.getAbsoluteMinimumInterval() + " but before " + sdInt.getMinimumInterval() + " from " + strIntType);
+        }
       }
       // Decision table column 5 is the else case at this point
       else

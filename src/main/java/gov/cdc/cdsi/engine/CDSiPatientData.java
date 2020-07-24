@@ -412,6 +412,10 @@ public class CDSiPatientData implements Serializable {
       this.antigenId = antigenId;
     }
 
+    public List<EvaluationReason> getEvaluationReasonList() {
+      return evaluationReasons;  
+    }
+    
     public String getEvaluationReason() {
       String concatStr = "";
       for (EvaluationReason er : evaluationReasons) {
